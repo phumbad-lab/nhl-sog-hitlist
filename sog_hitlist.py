@@ -30,7 +30,8 @@ Environment variables:
   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID   required to send
   ODDS_API_KEY        optional; without it the list uses fair prices only
   TELEGRAM_SILENT     "true" (default) = no sound
-  SEND_HOUR           send after this hour Eastern (default 7)
+  SEND_HOUR, SEND_MINUTE  send at or after this time Eastern (default 7:05, five minutes
+                      after the saves alert)
   FOLLOWUP_UNTIL      last hour for the DK-prices follow-up (default 12)
   LEAKY_TEAMS         top shots-allowed teams whose opponents are in play (default 12)
   MIN_RATE, MAX_RATE  shots-per-game band for shooters (default 1.8, 3.6)
@@ -95,6 +96,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 ODDS_API_KEY = os.getenv("ODDS_API_KEY", "").strip()
 SILENT = (os.getenv("TELEGRAM_SILENT", "") or "true").strip().lower() in ("1", "true", "yes")
 SEND_HOUR = env_num("SEND_HOUR", 7)
+SEND_MINUTE = env_num("SEND_MINUTE", 5)
 FOLLOWUP_UNTIL = env_num("FOLLOWUP_UNTIL", 12)
 LEAKY_TEAMS = env_num("LEAKY_TEAMS", 12)
 MIN_RATE = env_num("MIN_RATE", 1.8, float)
@@ -821,6 +823,14 @@ def check_players(names, day, now, state):
 
 # ---------- main ----------
 
+def credits_line(state, now):
+    """'Credits: 452 left' (shared with the saves bot). Listing events is free and reports the balance."""
+    if not ODDS_API_KEY:
+        return ""
+    _, left = odds_get(f"/sports/{SPORT}/events", {})
+    return f"Credits: {left} left" if left is not None else ""
+
+
 def priced_count(state):
     return len(state.get("dk", {}).get("games", {}))
 
@@ -838,7 +848,7 @@ def main():
         print("Sent player check.")
         return
 
-    if FORCE or (not sent_today and SEND_HOUR <= now.hour < 23):
+    if FORCE or (not sent_today and (SEND_HOUR, SEND_MINUTE) <= (now.hour, now.minute) and now.hour < 23):
         results = grade(day)
         rs = research(day, state)
         state["today"] = rs
@@ -846,6 +856,8 @@ def main():
         title, body = format_list(day, res)
         if results:
             body += "\n\n" + results
+        line = credits_line(state, now)
+        body += f"\n\n{line}" if line else ""
         send_push(title, body)
         if res["matchups"]:
             log_today(day, res)
@@ -861,6 +873,8 @@ def main():
         gained = priced_count(state) > state["followup"]["base"]
         if gained and (not res["unpriced"] or res["note"] or now.hour >= FOLLOWUP_UNTIL - 1):
             title, body = format_list(day, res, followup=True)
+            line = credits_line(state, now)
+            body += f"\n\n{line}" if line else ""
             send_push(title, body)
             log_today(day, res)
             state["followup"] = None
@@ -871,7 +885,7 @@ def main():
         state["followup"] = None
         print("Follow-up window closed.")
     else:
-        print(f"Nothing to do (sends after {SEND_HOUR}:00 ET; last sent {state.get('last_sent')}).")
+        print(f"Nothing to do (sends after {SEND_HOUR}:{SEND_MINUTE:02d} ET; last sent {state.get('last_sent')}).")
 
     # Keep only player summaries for the current set of finished seasons.
     tag = f":{season_id(day, 1)}"

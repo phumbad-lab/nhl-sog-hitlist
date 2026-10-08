@@ -1,6 +1,6 @@
 # NHL SOG hit list
 
-One Telegram message at 7 AM Eastern with tonight's best shots-on-goal legs and DraftKings prices. It targets consistent middle-of-the-pack shooters, not the stars whose milestones are overpriced. It gives you:
+One Telegram message at 7:05 AM Eastern (five minutes after the saves alert) with tonight's best shots-on-goal legs and DraftKings prices. It targets consistent middle-of-the-pack shooters, not the stars whose milestones are overpriced. It gives you:
 
 - **Anchors:** short-priced 2+/3+ legs to parlay
 - **Plus-money shooters:** 3+ legs worth a straight bet
@@ -22,6 +22,8 @@ Yesterday:
 ❌ Cale Makar 2+: 1
 Ticket ❌ missed
 Season: anchors 14/17 · plus-money 3-2 +1.4u · tickets 2/4
+
+Credits: 452 left
 ```
 
 ## How players are picked
@@ -70,13 +72,13 @@ Last names are fine unless two players share one. A check uses no odds credits, 
 
 Don't upload `state.json` or `hitlist.csv`; the bot creates and updates them.
 
-**Timing:** GitHub's scheduler often runs late, so the 7 AM message may land between 7:00 and 7:45. To get it right at 7, add a cron-job.org job like your saves bot's. Point it at this repo's `sog-hitlist.yml` workflow at 7:00 AM Eastern.
+**Timing:** the bot never sends before 7:05 AM Eastern. A cron-job.org job at 7:05 triggers it on time. GitHub's own schedule is the backup (it often runs late) and handles the DK-prices follow-up.
 
 ## Options (Settings › Secrets and variables › Actions › Variables tab)
 
 | Variable | What it does | Default |
 |---|---|---|
-| `SEND_HOUR` | Send after this hour, Eastern | `7` |
+| `SEND_HOUR` / `SEND_MINUTE` | Send at or after this time, Eastern | `7` / `5` |
 | `FOLLOWUP_UNTIL` | Last hour for the DK-prices follow-up | `12` |
 | `LEAKY_TEAMS` | Top shots-allowed teams whose opponents are in play | `12` |
 | `MIN_RATE` / `MAX_RATE` | Shots-per-game band for shooters | `1.8` / `3.6` |
