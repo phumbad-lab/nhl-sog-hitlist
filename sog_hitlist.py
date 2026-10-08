@@ -17,8 +17,10 @@ Each morning (default 7 AM Eastern):
   4. Pull DraftKings' milestone prices (2+, 3+, ...) for the games on the list:
      one call per game, about 2-5 credits a day, capped per month.
   5. Send one message:
-       Anchors       2+/3+ legs that hit 70%+ and aren't priced past -400
-       Plus-money    3+ legs at plus money where the hit rate beats the price
+       Anchors       2+/3+ legs he's hit in 80%+ of his last 20 games AND 85%+ of
+                     4+ games vs tonight's opponent, not priced past -400
+       Plus-money    3+ legs at plus money he's hit in 65%+ of his last 20 and
+                     80%+ of 4+ games vs tonight's opponent
        Ticket        3-4 anchors that add up to roughly +200 to +350
   If DK hasn't posted some games at send time, one follow-up with prices is
   sent once they appear (checks are free until they do), by FOLLOWUP_UNTIL.
@@ -32,7 +34,11 @@ Environment variables:
   FOLLOWUP_UNTIL      last hour for the DK-prices follow-up (default 12)
   LEAKY_TEAMS         top shots-allowed teams whose opponents are in play (default 12)
   MIN_RATE, MAX_RATE  shots-per-game band for shooters (default 1.8, 3.6)
-  ANCHOR_HIT          hit rate for an anchor, percent (default 70)
+  RECENT_HIT          anchor: share of last 20 games he hit the milestone, percent (default 80)
+  VS_HIT              anchor: share of games vs tonight's opponent he hit it, percent (default 85)
+  VS_MIN_GAMES        games vs the opponent needed before that record counts (default 4)
+  PLUS_RECENT_HIT     plus-money 3+: last-20 share, percent (default 65)
+  PLUS_VS_HIT         plus-money 3+: vs-opponent share, percent (default 80)
   MAX_JUICE           skip anchors DK prices shorter than this (default -400)
   PLUS_EDGE           points a plus-money leg's hit rate must beat DK's price by (default 5)
   ANCHORS, PLUS_LEGS  how many of each to list (default 6, 3)
@@ -93,7 +99,11 @@ FOLLOWUP_UNTIL = env_num("FOLLOWUP_UNTIL", 12)
 LEAKY_TEAMS = env_num("LEAKY_TEAMS", 12)
 MIN_RATE = env_num("MIN_RATE", 1.8, float)
 MAX_RATE = env_num("MAX_RATE", 3.6, float)
-ANCHOR_HIT = env_num("ANCHOR_HIT", 70, float) / 100
+RECENT_HIT = env_num("RECENT_HIT", 80, float) / 100
+VS_HIT = env_num("VS_HIT", 85, float) / 100
+VS_MIN_GAMES = env_num("VS_MIN_GAMES", 4)
+PLUS_RECENT_HIT = env_num("PLUS_RECENT_HIT", 65, float) / 100
+PLUS_VS_HIT = env_num("PLUS_VS_HIT", 80, float) / 100
 MAX_JUICE = env_num("MAX_JUICE", -400)
 PLUS_EDGE = env_num("PLUS_EDGE", 5, float) / 100
 ANCHORS = env_num("ANCHORS", 6)
@@ -379,9 +389,21 @@ def evaluate(pid, name, pos, team, opp, rate, day, state):
             "last_played": cur[0][0] if cur else past["last"]}
 
 
+def passes(c, k, recent_min, vs_min):
+    """Did he hit k+ in enough of his last 20 AND of his (4+) games vs tonight's opponent?"""
+    r_hits, v_hits = c["detail"][str(k)]
+    return (r_hits / c["r_n"] >= recent_min and c["v_n"] >= VS_MIN_GAMES
+            and v_hits / c["v_n"] >= vs_min)
+
+
+def record(c, k):
+    r_hits, v_hits = c["detail"][str(k)]
+    return (r_hits + v_hits) / (c["r_n"] + c["v_n"])
+
+
 def anchor_leg(c):
-    """Biggest milestone he clears ANCHOR_HIT of the time."""
-    ks = [k for k in THRESHOLDS if c["probs"][str(k)] >= ANCHOR_HIT]
+    """Biggest milestone that clears both the recent and the vs-opponent bar."""
+    ks = [k for k in THRESHOLDS if passes(c, k, RECENT_HIT, VS_HIT)]
     return max(ks) if ks else None
 
 
@@ -517,13 +539,13 @@ def select(rs, day, now, state, spend=True):
     abbrevs, matchups = rs["abbrevs"], rs["matchups"]
     # Shortlist before pricing, so credits only go to games that matter.
     anchors = [dict(c, k=anchor_leg(c)) for c in cands if anchor_leg(c)]
-    anchors.sort(key=lambda c: c["probs"][str(c["k"])], reverse=True)
+    anchors.sort(key=lambda c: (record(c, c["k"]), c["probs"][str(c["k"])]), reverse=True)
     plus_pool = []
     for c in cands:
-        k = (anchor_leg(c) or 2) + 1
-        if str(k) in c["probs"] and 0.35 <= c["probs"][str(k)] < ANCHOR_HIT:
+        k = max(3, (anchor_leg(c) or 2) + 1)
+        if str(k) in c["probs"] and passes(c, k, PLUS_RECENT_HIT, PLUS_VS_HIT):
             plus_pool.append(dict(c, k=k))
-    plus_pool.sort(key=lambda c: c["probs"][str(c["k"])], reverse=True)
+    plus_pool.sort(key=lambda c: (record(c, c["k"]), c["probs"][str(c["k"])]), reverse=True)
     shortlist = anchors[:ANCHORS * 2] + plus_pool[:PLUS_LEGS * 3]
     games_wanted = []
     for c in shortlist:
@@ -547,7 +569,6 @@ def select(rs, day, now, state, spend=True):
         p = c["probs"][str(c["k"])]
         if price is not None and price >= 100 and p - implied(price) >= PLUS_EDGE:
             final_plus.append(dict(c, price=price, seen=seen, p=p))
-    final_plus.sort(key=lambda c: c["p"] - implied(c["price"]), reverse=True)
     final_plus = final_plus[:PLUS_LEGS]
 
     unpriced = [g for g in games_wanted if "|".join(g) not in have and "|".join(g[::-1]) not in have]
@@ -590,32 +611,28 @@ def format_list(day, res, followup=False):
         return title, "None of tonight's games are against a leaky defense."
     if not res["anchors"] and not res["plus"]:
         out.append("No consistent mid-tier shooters clear the bar tonight.")
+    def leg_line(a, prefix):
+        r_hits, v_hits = a["detail"][str(a["k"])]
+        if a["price"] is None:
+            price = "DK not up"
+        else:
+            price = f"DK {fmt_price(a['price'])}" + (" ✓" if a["p"] > implied(a["price"]) + 0.03 else "")
+        return (f"{prefix}{a['name']} ({a['team']}) {a['k']}+ vs {a['opp']} · (f {to_american(a['p'])}) · "
+                f"{price} · L{a['r_n']} {r_hits}/{a['r_n']} · vs {a['opp']} {a['k']}+ in {v_hits}/{a['v_n']}")
+
     if res["anchors"]:
-        out.append(f"ANCHORS (hit {ANCHOR_HIT:.0%}+)")
-        for i, a in enumerate(res["anchors"], 1):
-            r_hits, v_hits = a["detail"][str(a["k"])]
-            price = (f"DK {fmt_price(a['price'])}" + (" ✓" if a["p"] > implied(a["price"]) + 0.03 else "")
-                     if a["price"] is not None else "DK not up yet")
-            vs = (f"vs {a['opp']} {a['k']}+ in {v_hits}/{a['v_n']}" if a["v_n"] else f"first time vs {a['opp']}")
-            d = " D" if a["pos"] == "D" else ""
-            out.append(f"{i}. {a['name']} ({a['team']}{d}) {a['k']}+ vs {a['opp']} · {a['p']:.0%} · "
-                       f"fair {to_american(a['p'])} · {price}")
-            role = f"{fmt_toi(a['toi'])} TOI {a['pos']}#{a['rank']}" + (" PP1" if a["pp1"] else "")
-            out.append(f"   {a['rate']:.1f}/gm · {role} · L{a['r_n']} {r_hits}/{a['r_n']} · {vs}")
+        out.append("ANCHORS")
+        out += [leg_line(a, f"{i}. ") for i, a in enumerate(res["anchors"], 1)]
     if res["plus"]:
-        out.append("\nPLUS-MONEY SHOOTERS (straights)")
-        for p in res["plus"]:
-            pp = " PP1" if p["pp1"] else ""
-            out.append(f"• {p['name']} ({p['team']}{pp}) {p['k']}+ vs {p['opp']} · DK {fmt_price(p['price'])} · "
-                       f"hits {p['p']:.0%} (fair {to_american(p['p'])})")
+        out.append("\nPLUS-MONEY SHOOTERS")
+        out += [leg_line(p, "") for p in res["plus"]]
+    elif res["anchors"]:
+        out.append("\nPLUS-MONEY SHOOTERS: none tonight")
     t = res["ticket"]
     if t:
         names = ", ".join(f"{a['name'].split()[-1]} {a['k']}+" for a in t["legs"])
         price = f"DK ≈ {dec_to_american(t['dec'])} · " if t["priced"] else ""
-        wait = "" if t["priced"] else " (price once DK posts)"
-        out.append(f"\nTICKET: {names} → {price}hits {t['prob']:.0%} on history{wait}")
-        if len({frozenset((a['team'], a['opp'])) for a in t['legs']}) < len(t["legs"]):
-            out.append("   (same-game legs: DK prices those as an SGP, so the payout will differ)")
+        out.append(f"\nTICKET: {names} → {price}hits {t['prob']:.0%} on history")
     if res["unpriced"] and not followup and not res["note"]:
         out.append(f"\nDK hasn't posted {len(res['unpriced'])} of these games yet; "
                    f"prices follow when they're up (by {FOLLOWUP_UNTIL % 12 or 12} {'PM' if FOLLOWUP_UNTIL >= 12 else 'AM'}).")
@@ -765,7 +782,9 @@ def check_players(names, day, now, state):
         facts = (f"{rate:.1f} shots/gm · {fmt_toi(role['toi'])} TOI {pos}#{role['rank']}"
                  + (" PP1" if role["pp1"] else "") + f" · vs {opp} (#{sa_rank.get(opp, '?')} in shots allowed)")
         if c:
-            facts += " · " + " · ".join(f"{k}+ {c['probs'][str(k)]:.0%}" for k in (2, 3, 4))
+            facts += "\n   " + " · ".join(
+                f"{k}+: L{c['r_n']} {c['detail'][str(k)][0]}/{c['r_n']}, vs {opp} {c['detail'][str(k)][1]}/{c['v_n']}"
+                for k in (2, 3))
         if pid in listed:
             out.append(f"✅ {name} ({team}) on the list, {listed[pid]}\n   {facts}")
             continue
@@ -784,7 +803,13 @@ def check_players(names, day, now, state):
         elif c.get("missed"):
             why = "missed his team's last game"
         elif not anchor_leg(c):
-            why = f"best leg is 2+ at {c['probs']['2']:.0%}, under the {ANCHOR_HIT:.0%} anchor bar"
+            r2, v2 = c["detail"]["2"]
+            if c["v_n"] < VS_MIN_GAMES:
+                why = f"only {c['v_n']} game(s) vs {opp}; needs {VS_MIN_GAMES}+ to count"
+            elif v2 / c["v_n"] < VS_HIT:
+                why = f"2+ in {v2}/{c['v_n']} vs {opp}, under the {VS_HIT:.0%} bar"
+            else:
+                why = f"2+ in {r2}/{c['r_n']} of his last {c['r_n']}, under the {RECENT_HIT:.0%} bar"
         else:
             k = anchor_leg(c)
             price, _ = dk_price(c, k, state.get("dk", {}).get("games", {}))

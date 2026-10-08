@@ -7,21 +7,19 @@ One Telegram message at 7 AM Eastern with tonight's best shots-on-goal legs and 
 - **Ticket:** 3–4 anchors that add up to roughly +200 to +350
 
 ```
-SOG hit list · Fri Oct 9
-ANCHORS (hit 70%+)
-1. Dougie Hamilton (NJD D) 2+ vs SJS · 82% · fair -456 · DK -260 ✓
-   2.8/gm · 22:10 TOI D#1 PP1 · L20 17/20 · vs SJS 2+ in 6/7
-2. Nick Schmaltz (UTA) 2+ vs CHI · 79% · fair -373 · DK -210 ✓
-   2.4/gm · 19:05 TOI F#3 PP1 · L20 18/20 · vs CHI 2+ in 6/8
-...
-PLUS-MONEY SHOOTERS (straights)
-• Jesper Bratt (NJD) 3+ vs SJS · DK +110 · hits 56% (fair -127)
+SOG hit list · Thu Oct 8
+ANCHORS
+1. Clayton Keller (UTA) 2+ vs BOS · (f -475) · DK -275 ✓ · L20 17/20 · vs BOS 2+ in 6/6
+2. Cale Makar (COL) 2+ vs CGY · (f -413) · DK -360 · L20 17/20 · vs CGY 2+ in 7/8
+3. Nikolaj Ehlers (CAR) 2+ vs VAN · (f -330) · DK -250 ✓ · L20 16/20 · vs VAN 2+ in 7/8
 
-TICKET: Hamilton 2+, Schmaltz 2+, Raymond 2+, Seider 2+ → DK ≈ +312 · hits 45% on history
+PLUS-MONEY SHOOTERS: none tonight
+
+TICKET: Keller 2+, Ehlers 2+, Makar 2+ → DK ≈ +144 · hits 51% on history
 
 Yesterday:
-✅ Dougie Hamilton 2+: 3
-❌ Nick Schmaltz 2+: 1
+✅ Clayton Keller 2+: 3
+❌ Cale Makar 2+: 1
 Ticket ❌ missed
 Season: anchors 14/17 · plus-money 3-2 +1.4u · tickets 2/4
 ```
@@ -32,11 +30,11 @@ Season: anchors 14/17 · plus-money 3-2 +1.4u · tickets 2/4
 3. **Mid-tier shooters:** of those, it keeps skaters averaging **1.8 to 3.6 shots a game**. Stars above 3.6 are left out because their 2+ and 3+ are priced too short. Anyone who missed his team's last game (injury or scratch) is dropped.
 4. **Power play:** **PP1** is shown for the team's top 5 skaters in power-play time with 1:00+ a game. Set `REQUIRE_PP1` to `true` to list only PP1 players.
 5. **Hit rate:** for 2+, 3+, 4+ and 5+, it counts how often he got there in his **last 20 games** and in **every game vs tonight's opponent** (this season plus the last 3). Those are combined, then blended with what a typical shooter at his shot rate would do. A lucky 20/20 streak reads as ~90%, not a sure thing, while genuine consistency still stands out.
-6. **Anchors:** each player's biggest milestone with a 70%+ hit rate. Legs DK prices shorter than **-400** are dropped as not worth a parlay slot.
-7. **Plus-money shooters:** the next milestone up (usually 3+), listed only when DK pays plus money and the hit rate beats DK's price by 5+ points.
+6. **Anchors:** the biggest milestone he's hit in **80%+ of his last 20 games** (16/20 or better) **and 85%+ of his games vs tonight's opponent, with at least 4 of them** (4/4, 6/6, 6/7, 7/8...). A 1/2 or 2/4 history doesn't count. Legs DK prices shorter than **-400** are dropped as not worth a parlay slot.
+7. **Plus-money shooters:** 3+ (or one above his anchor) that he's hit in **65%+ of his last 20** and **80%+ of 4+ games vs the opponent**, listed only when DK pays plus money and the estimate beats DK's price by 5+ points. Many nights this section is empty.
 8. **Ticket:** the best-value anchors stacked until the price reaches about +200, with at most 4 legs and at most 2 from one game.
 
-**Reading a line:** `19:05 TOI F#3 PP1` means 19:05 of ice time a game, 3rd-most among his team's forwards, and on the first power-play unit. `82% · fair -456 · DK -260 ✓` means history says he hits 82% of the time, which is worth -456. DK is only asking -260, and ✓ marks DK's price as better than fair.
+**Reading a line:** `(f -475) · DK -275 ✓` means the fair price is -475 and DK is only asking -275; ✓ marks DK's price as better than fair (`DK not up` if DK hasn't posted yet). The fair price comes from his record (here 17/20 recently and 6/6 vs BOS, 23/26 combined) pulled slightly toward what a typical shooter at his rate does, since hot streaks cool off. That works out to about an 83% chance, worth -475.
 
 **Early season:** shots allowed and shot rates are blended with last season until about 10 games in (`BLEND_GAMES`).
 
@@ -82,9 +80,11 @@ Don't upload `state.json` or `hitlist.csv`; the bot creates and updates them.
 | `FOLLOWUP_UNTIL` | Last hour for the DK-prices follow-up | `12` |
 | `LEAKY_TEAMS` | Top shots-allowed teams whose opponents are in play | `12` |
 | `MIN_RATE` / `MAX_RATE` | Shots-per-game band for shooters | `1.8` / `3.6` |
-| `ANCHOR_HIT` | Hit rate for an anchor, percent | `70` |
+| `RECENT_HIT` / `VS_HIT` | Anchor bars: last-20 % and vs-opponent % | `80` / `85` |
+| `VS_MIN_GAMES` | Games vs the opponent needed before that record counts | `4` |
+| `PLUS_RECENT_HIT` / `PLUS_VS_HIT` | Plus-money bars at 3+ | `65` / `80` |
 | `MAX_JUICE` | Drop anchors DK prices shorter than this | `-400` |
-| `PLUS_EDGE` | Points a plus-money leg's hit rate must beat DK's price by | `5` |
+| `PLUS_EDGE` | Points a plus-money leg's estimate must beat DK's price by | `5` |
 | `ANCHORS` / `PLUS_LEGS` | How many of each to list | `6` / `3` |
 | `ODDS_MONTHLY_CAP` | Most odds credits per month | `75` |
 | `ODDS_RESERVE` | Never spend at or below this many credits left | `200` |
