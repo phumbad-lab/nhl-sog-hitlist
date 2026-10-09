@@ -40,11 +40,16 @@ jobs:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           TELEGRAM_SILENT: ${{ vars.TELEGRAM_SILENT }}
           SEND_HOUR: ${{ vars.SEND_HOUR }}
+          SEND_MINUTE: ${{ vars.SEND_MINUTE }}
           FOLLOWUP_UNTIL: ${{ vars.FOLLOWUP_UNTIL }}
           LEAKY_TEAMS: ${{ vars.LEAKY_TEAMS }}
           MIN_RATE: ${{ vars.MIN_RATE }}
           MAX_RATE: ${{ vars.MAX_RATE }}
-          ANCHOR_HIT: ${{ vars.ANCHOR_HIT }}
+          RECENT_HIT: ${{ vars.RECENT_HIT }}
+          VS_HIT: ${{ vars.VS_HIT }}
+          VS_MIN_GAMES: ${{ vars.VS_MIN_GAMES }}
+          PLUS_RECENT_HIT: ${{ vars.PLUS_RECENT_HIT }}
+          PLUS_VS_HIT: ${{ vars.PLUS_VS_HIT }}
           MAX_JUICE: ${{ vars.MAX_JUICE }}
           PLUS_EDGE: ${{ vars.PLUS_EDGE }}
           ANCHORS: ${{ vars.ANCHORS }}
@@ -55,6 +60,9 @@ jobs:
           TOP_FORWARDS: ${{ vars.TOP_FORWARDS }}
           TOP_D: ${{ vars.TOP_D }}
           REQUIRE_PP1: ${{ vars.REQUIRE_PP1 }}
+          PP1_TOP_FORWARDS: ${{ vars.PP1_TOP_FORWARDS }}
+          HOT_RECENT: ${{ vars.HOT_RECENT }}
+          HOT_VS: ${{ vars.HOT_VS }}
           FORCE: ${{ inputs.force }}
           CHECK: ${{ inputs.check }}
 
