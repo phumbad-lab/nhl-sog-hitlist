@@ -27,12 +27,12 @@ Credits: 452 left
 ```
 
 ## How players are picked
-1. **Leaky defenses:** teams are ranked by shots allowed per game. Tonight's games against the top 12 are in play, usually about half the slate.
-2. **Top-two lines:** on the other side of those games, only players in their team's **top 6 forwards or top 4 defensemen by ice time** are considered (lines 1–2 and pairs 1–2). Ice time leans on this season and switches over after about 5 games, so line changes show up quickly.
+1. **Leaky defenses:** teams are ranked by shots allowed per game. Tonight's games against the top 20 are in play, which is most of the slate. Only shooters facing the stingiest defenses are left out.
+2. **Top-two lines:** on the other side of those games, only players in their team's **top 6 forwards or top 4 defensemen by ice time** are considered (lines 1–2 and pairs 1–2). A forward on the **first power-play unit** also counts if he's in the **top 9**, so a third-liner with a big PP role still qualifies. Ice time leans on this season and switches over after about 5 games, so line changes show up quickly.
 3. **Mid-tier shooters:** of those, it keeps skaters averaging **1.8 to 3.6 shots a game**. Stars above 3.6 are left out because their 2+ and 3+ are priced too short. Anyone who missed his team's last game (injury or scratch) is dropped.
 4. **Power play:** **PP1** is shown for the team's top 5 skaters in power-play time with 1:00+ a game. Set `REQUIRE_PP1` to `true` to list only PP1 players.
 5. **Hit rate:** for 2+, 3+, 4+ and 5+, it counts how often he got there in his **last 20 games** and in **every game vs tonight's opponent** (this season plus the last 3). Those are combined, then blended with what a typical shooter at his shot rate would do. A lucky 20/20 streak reads as ~90%, not a sure thing, while genuine consistency still stands out.
-6. **Anchors:** the biggest milestone he's hit in **80%+ of his last 20 games** (16/20 or better) **and 85%+ of his games vs tonight's opponent, with at least 4 of them** (4/4, 6/6, 6/7, 7/8...). A 1/2 or 2/4 history doesn't count. Legs DK prices shorter than **-400** are dropped as not worth a parlay slot.
+6. **Anchors:** the biggest milestone he's hit in **80%+ of his last 20 games** (16/20 or better) **and 85%+ of his games vs tonight's opponent, with at least 4 of them** (4/4, 6/6, 6/7, 7/8...). A 1/2 or 2/4 history doesn't count. **Hot-hand exception:** a player at **18/20 or better** recently only needs **50%+** vs the opponent (still in 4+ games), e.g. 19/20 recently and 2/4 vs DET. Legs DK prices shorter than **-400** are dropped as not worth a parlay slot.
 7. **Plus-money shooters:** 3+ (or one above his anchor) that he's hit in **65%+ of his last 20** and **80%+ of 4+ games vs the opponent**, listed only when DK pays plus money and the estimate beats DK's price by 5+ points. Many nights this section is empty.
 8. **Ticket:** the best-value anchors stacked until the price reaches about +200, with at most 4 legs and at most 2 from one game.
 
@@ -80,7 +80,7 @@ Don't upload `state.json` or `hitlist.csv`; the bot creates and updates them.
 |---|---|---|
 | `SEND_HOUR` / `SEND_MINUTE` | Send at or after this time, Eastern | `7` / `5` |
 | `FOLLOWUP_UNTIL` | Last hour for the DK-prices follow-up | `12` |
-| `LEAKY_TEAMS` | Top shots-allowed teams whose opponents are in play | `12` |
+| `LEAKY_TEAMS` | Top shots-allowed teams whose opponents are in play (`32` = all) | `20` |
 | `MIN_RATE` / `MAX_RATE` | Shots-per-game band for shooters | `1.8` / `3.6` |
 | `RECENT_HIT` / `VS_HIT` | Anchor bars: last-20 % and vs-opponent % | `80` / `85` |
 | `VS_MIN_GAMES` | Games vs the opponent needed before that record counts | `4` |
@@ -92,6 +92,8 @@ Don't upload `state.json` or `hitlist.csv`; the bot creates and updates them.
 | `ODDS_RESERVE` | Never spend at or below this many credits left | `200` |
 | `TOP_FORWARDS` / `TOP_D` | Ice-time rank cutoffs (lines 1–2, pairs 1–2) | `6` / `4` |
 | `REQUIRE_PP1` | `true` = only first power-play unit players | `false` |
+| `PP1_TOP_FORWARDS` | PP1 forwards also count if this high in team ice time | `9` |
+| `HOT_RECENT` / `HOT_VS` | Hot hand: last-20 % that lowers the vs-opponent bar, and the lower bar | `90` / `50` |
 | `BLEND_GAMES` | Early-season blending with last season (`0` = off) | `10` |
 | `TELEGRAM_SILENT` | `true` = no sound | `true` |
 

@@ -7,7 +7,7 @@ milestones are overpriced), short-priced 2+/3+ legs to parlay into a +200 to
 
 Each morning (default 7 AM Eastern):
   1. Rank teams by shots allowed per game; tonight's games against the top
-     LEAKY_TEAMS (default 12) are in play.
+     LEAKY_TEAMS (default 20) are in play.
   2. On the other side of those games, keep skaters who are in their team's top
      6 forwards or top 4 defensemen by ice time (lines/pairs 1-2) and average
      MIN_RATE to MAX_RATE shots per game (default 1.8 to 3.6). PP1 is shown
@@ -33,7 +33,7 @@ Environment variables:
   SEND_HOUR, SEND_MINUTE  send at or after this time Eastern (default 7:05, five minutes
                       after the saves alert)
   FOLLOWUP_UNTIL      last hour for the DK-prices follow-up (default 12)
-  LEAKY_TEAMS         top shots-allowed teams whose opponents are in play (default 12)
+  LEAKY_TEAMS         top shots-allowed teams whose opponents are in play (default 20)
   MIN_RATE, MAX_RATE  shots-per-game band for shooters (default 1.8, 3.6)
   RECENT_HIT          anchor: share of last 20 games he hit the milestone, percent (default 80)
   VS_HIT              anchor: share of games vs tonight's opponent he hit it, percent (default 85)
@@ -48,6 +48,9 @@ Environment variables:
                       which protects the saves bot sharing the key
   BLEND_GAMES         early-season blending with last season (default 10; 0 = off)
   TOP_FORWARDS, TOP_D ice-time rank cutoffs (default 6, 4)
+  PP1_TOP_FORWARDS    PP1 forwards also count if this high in ice time (default 9)
+  HOT_RECENT, HOT_VS  hot hand: an anchor at HOT_RECENT% of his last 20 (default 90,
+                      i.e. 18/20) only needs HOT_VS% vs the opponent (default 50)
   REQUIRE_PP1         "true" = only players on the first power-play unit
   FORCE               "true" = send the morning list now even if already sent
   CHECK               comma-separated player names: message whether each made today's
@@ -98,12 +101,14 @@ SILENT = (os.getenv("TELEGRAM_SILENT", "") or "true").strip().lower() in ("1", "
 SEND_HOUR = env_num("SEND_HOUR", 7)
 SEND_MINUTE = env_num("SEND_MINUTE", 5)
 FOLLOWUP_UNTIL = env_num("FOLLOWUP_UNTIL", 12)
-LEAKY_TEAMS = env_num("LEAKY_TEAMS", 12)
+LEAKY_TEAMS = env_num("LEAKY_TEAMS", 20)
 MIN_RATE = env_num("MIN_RATE", 1.8, float)
 MAX_RATE = env_num("MAX_RATE", 3.6, float)
 RECENT_HIT = env_num("RECENT_HIT", 80, float) / 100
 VS_HIT = env_num("VS_HIT", 85, float) / 100
 VS_MIN_GAMES = env_num("VS_MIN_GAMES", 4)
+HOT_RECENT = env_num("HOT_RECENT", 90, float) / 100   # hot hand: 18/20+ recently...
+HOT_VS = env_num("HOT_VS", 50, float) / 100           # ...only needs 50%+ vs the opponent
 PLUS_RECENT_HIT = env_num("PLUS_RECENT_HIT", 65, float) / 100
 PLUS_VS_HIT = env_num("PLUS_VS_HIT", 80, float) / 100
 MAX_JUICE = env_num("MAX_JUICE", -400)
@@ -114,6 +119,7 @@ ODDS_MONTHLY_CAP = env_num("ODDS_MONTHLY_CAP", 75)
 ODDS_RESERVE = env_num("ODDS_RESERVE", 200)
 BLEND_GAMES = env_num("BLEND_GAMES", 10, float)
 TOP_FORWARDS = env_num("TOP_FORWARDS", 6)     # top 6 forwards by ice time = lines 1-2
+PP1_TOP_FORWARDS = env_num("PP1_TOP_FORWARDS", 9)  # PP1 forwards also count if top 9 in ice time
 TOP_D = env_num("TOP_D", 4)                   # top 4 D by ice time = pairs 1-2
 REQUIRE_PP1 = os.getenv("REQUIRE_PP1", "").strip().lower() in ("1", "true", "yes")
 CHECK = os.getenv("CHECK", "").strip()
@@ -297,6 +303,10 @@ def team_roles(players, toi_cur, toi_last):
     pp_ranked = sorted(info, key=lambda p: info[p]["pp"], reverse=True)
     for i, p in enumerate(pp_ranked, 1):
         info[p]["pp1"] = i <= PP1_SIZE and info[p]["pp"] >= PP1_MIN_SECS
+        # A first-unit power-play forward on the third line still gets real chances.
+        if (info[p]["pos"] == "F" and info[p]["pp1"] and not info[p]["top"]
+                and info[p]["rank"] <= PP1_TOP_FORWARDS and info[p]["toi"] > 0):
+            info[p]["top"] = True
     return info
 
 
@@ -403,9 +413,14 @@ def record(c, k):
     return (r_hits + v_hits) / (c["r_n"] + c["v_n"])
 
 
+def anchor_ok(c, k):
+    """Normal bar, or the hot-hand bar: 18/20+ recently with a 50%+ record vs the opponent."""
+    return passes(c, k, RECENT_HIT, VS_HIT) or passes(c, k, HOT_RECENT, HOT_VS)
+
+
 def anchor_leg(c):
-    """Biggest milestone that clears both the recent and the vs-opponent bar."""
-    ks = [k for k in THRESHOLDS if passes(c, k, RECENT_HIT, VS_HIT)]
+    """Biggest milestone that clears the anchor bar."""
+    ks = [k for k in THRESHOLDS if anchor_ok(c, k)]
     return max(ks) if ks else None
 
 
@@ -791,6 +806,8 @@ def check_players(names, day, now, state):
             out.append(f"✅ {name} ({team}) on the list, {listed[pid]}\n   {facts}")
             continue
         top_n = TOP_FORWARDS if pos == "F" else TOP_D
+        if pos == "F" and role["pp1"]:
+            top_n = PP1_TOP_FORWARDS
         if sa_rank.get(opp, 99) > LEAKY_TEAMS:
             why = f"{opp} isn't a top-{LEAKY_TEAMS} leaky defense"
         elif not role["top"]:
@@ -808,8 +825,11 @@ def check_players(names, day, now, state):
             r2, v2 = c["detail"]["2"]
             if c["v_n"] < VS_MIN_GAMES:
                 why = f"only {c['v_n']} game(s) vs {opp}; needs {VS_MIN_GAMES}+ to count"
+            elif v2 / c["v_n"] < VS_HIT and r2 / c["r_n"] >= HOT_RECENT:
+                why = f"2+ in {v2}/{c['v_n']} vs {opp}, under even the hot-hand {HOT_VS:.0%} bar"
             elif v2 / c["v_n"] < VS_HIT:
-                why = f"2+ in {v2}/{c['v_n']} vs {opp}, under the {VS_HIT:.0%} bar"
+                why = (f"2+ in {v2}/{c['v_n']} vs {opp}, under the {VS_HIT:.0%} bar "
+                       f"(or {HOT_VS:.0%} with 18/20+ recently; he's {r2}/{c['r_n']})")
             else:
                 why = f"2+ in {r2}/{c['r_n']} of his last {c['r_n']}, under the {RECENT_HIT:.0%} bar"
         else:
