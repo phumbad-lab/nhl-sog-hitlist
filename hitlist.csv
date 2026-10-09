@@ -7,4 +7,8 @@ date,section,player,player_id,team,opponent,leg,hit_pct,fair_odds,dk_odds,dk_see
 2026-10-08,anchor,Nikolaj Ehlers,8477940,CAR,VAN,2,77,-330,-250,11:32,Y,1,L,-1.00
 2026-10-08,plus,Tomas Hertl,8476881,VGK,TOR,3,52,-110,+175,11:32,,3,W,+1.75
 2026-10-08,plus,Gabriel Landeskog,8476455,COL,CGY,3,44,+126,+160,11:32,,1,L,-1.00
-2026-10-09,anchor,Pavel Dorofeyev,8481604,NYR,WSH,2,80,-412,-380,15:33,,,,
+2026-10-09,anchor,Alex Ovechkin,8471214,WSH,NYR,2,82,-466,-350,15:43,Y,,,
+2026-10-09,anchor,Brandon Montour,8477986,SEA,DET,2,79,-366,-275,15:43,,,,
+2026-10-09,anchor,Pavel Dorofeyev,8481604,NYR,WSH,2,80,-412,-380,15:33,Y,,,
+2026-10-09,anchor,Bobby McMann,8482259,SEA,DET,2,80,-393,-270,15:43,Y,,,
+2026-10-09,anchor,Moritz Seider,8481542,DET,SEA,2,75,-300,-220,15:43,Y,,,
