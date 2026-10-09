@@ -1,9 +1,9 @@
 date,section,player,player_id,team,opponent,leg,hit_pct,fair_odds,dk_odds,dk_seen_at,in_ticket,actual_sog,result,units
-2026-10-08,anchor,Clayton Keller,8479343,UTA,BOS,2,83,-475,-275,11:32,Y,,,
-2026-10-08,anchor,Matthew Schaefer,8485366,NYI,CHI,2,82,-471,-400,11:32,,,,
-2026-10-08,anchor,Cale Makar,8480069,COL,CGY,2,81,-413,-360,11:32,,,,
-2026-10-08,anchor,Nazem Kadri,8475172,COL,CGY,2,78,-365,-245,11:32,Y,,,
-2026-10-08,anchor,Kyle Palmieri,8475151,NYI,CHI,2,77,-334,-255,11:32,Y,,,
-2026-10-08,anchor,Nikolaj Ehlers,8477940,CAR,VAN,2,77,-330,-250,11:32,Y,,,
-2026-10-08,plus,Tomas Hertl,8476881,VGK,TOR,3,52,-110,+175,11:32,,,,
-2026-10-08,plus,Gabriel Landeskog,8476455,COL,CGY,3,44,+126,+160,11:32,,,,
+2026-10-08,anchor,Clayton Keller,8479343,UTA,BOS,2,83,-475,-275,11:32,Y,4,W,+0.36
+2026-10-08,anchor,Matthew Schaefer,8485366,NYI,CHI,2,82,-471,-400,11:32,,4,W,+0.25
+2026-10-08,anchor,Cale Makar,8480069,COL,CGY,2,81,-413,-360,11:32,,2,W,+0.28
+2026-10-08,anchor,Nazem Kadri,8475172,COL,CGY,2,78,-365,-245,11:32,Y,2,W,+0.41
+2026-10-08,anchor,Kyle Palmieri,8475151,NYI,CHI,2,77,-334,-255,11:32,Y,1,L,-1.00
+2026-10-08,anchor,Nikolaj Ehlers,8477940,CAR,VAN,2,77,-330,-250,11:32,Y,1,L,-1.00
+2026-10-08,plus,Tomas Hertl,8476881,VGK,TOR,3,52,-110,+175,11:32,,3,W,+1.75
+2026-10-08,plus,Gabriel Landeskog,8476455,COL,CGY,3,44,+126,+160,11:32,,1,L,-1.00
