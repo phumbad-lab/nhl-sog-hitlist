@@ -10,7 +10,7 @@ Each morning (default 7 AM Eastern):
      LEAKY_TEAMS (default 20) are in play.
   2. On the other side of those games, keep skaters who are in their team's top
      6 forwards or top 4 defensemen by ice time (lines/pairs 1-2) and average
-     MIN_RATE to MAX_RATE shots per game (default 1.8 to 3.6). PP1 is shown
+     MIN_RATE to MAX_RATE shots per game (default 1.5 to 5; the price limit drops overpriced stars). PP1 is shown
      (top 5 on the team in power-play time) and can be required with REQUIRE_PP1.
   3. For each, count how often he got 2+, 3+, 4+ shots in his last 20 games and
      in every game vs tonight's opponent (this season + last 3).
@@ -18,7 +18,7 @@ Each morning (default 7 AM Eastern):
      one call per game, about 2-5 credits a day, capped per month.
   5. Send one message:
        Anchors       2+/3+ legs he's hit in 80%+ of his last 20 games AND 85%+ of
-                     4+ games vs tonight's opponent, not priced past -400
+                     4+ games vs tonight's opponent, not priced past -375
        Plus-money    3+ legs at plus money he's hit in 65%+ of his last 20 and
                      80%+ of 4+ games vs tonight's opponent
        Ticket        3-4 anchors that add up to roughly +200 to +350
@@ -34,23 +34,31 @@ Environment variables:
                       after the saves alert)
   FOLLOWUP_UNTIL      last hour for the DK-prices follow-up (default 12)
   LEAKY_TEAMS         top shots-allowed teams whose opponents are in play (default 20)
-  MIN_RATE, MAX_RATE  shots-per-game band for shooters (default 1.8, 3.6)
-  RECENT_HIT          anchor: share of last 20 games he hit the milestone, percent (default 80)
-  VS_HIT              anchor: share of games vs tonight's opponent he hit it, percent (default 85)
+  MIN_RATE, MAX_RATE  shots-per-game band for shooters (default 1.5, 5)
+  RECENT_HIT          anchor: share of his last RECENT_GAMES he hit the milestone, percent (default 80)
+  VS_HIT              anchor: share of games vs tonight's opponent he hit it, percent (default 80)
   VS_MIN_GAMES        games vs the opponent needed before that record counts (default 4)
-  PLUS_RECENT_HIT     plus-money 3+: last-20 share, percent (default 65)
-  PLUS_VS_HIT         plus-money 3+: vs-opponent share, percent (default 80)
-  MAX_JUICE           skip anchors DK prices shorter than this (default -400)
-  PLUS_EDGE           points a plus-money leg's hit rate must beat DK's price by (default 5)
+  PLUS_RECENT_HIT     3+ section: last-N share, percent (default 65)
+  PLUS_VS_HIT         3+ section: vs-opponent share, percent (default 80)
+  PLUS_STREAK         3+ section: 3+ shots in each of his last N games (default 5)
+  PLUS_MIN_PRICE      3+ section: DK price must be this or better (default -110)
+  ANCHOR_MAX_K        biggest milestone an anchor can be (default 2; 3+ legs have their own section)
+  PP_UNITS            1 = only PP1 forwards get the top-9 exception, 2 = PP1 or PP2 (default 2)
+  MAX_JUICE           skip anchors DK prices shorter than this (default -375)
+  PLUS_EDGE           points a 3+ leg's estimate must beat DK's price by (default 0)
   ANCHORS, PLUS_LEGS  how many of each to list (default 6, 3)
   ODDS_MONTHLY_CAP    most credits this bot spends per month (default 75)
   ODDS_RESERVE        never spend when the account is at or below this (default 200),
                       which protects the saves bot sharing the key
-  BLEND_GAMES         early-season blending with last season (default 10; 0 = off)
+  BLEND_GAMES         early-season blending of player shot rates with last season (default 10; 0 = off)
+  TEAM_BLEND_GAMES    same for team shots allowed / tightest defenses (default 0 = this season only)
   TOP_FORWARDS, TOP_D ice-time rank cutoffs (default 6, 4)
   PP1_TOP_FORWARDS    PP1 forwards also count if this high in ice time (default 9)
-  HOT_RECENT, HOT_VS  hot hand: an anchor at HOT_RECENT% of his last 20 (default 90,
-                      i.e. 18/20) only needs HOT_VS% vs the opponent (default 50)
+  HOT_RECENT, HOT_VS  hot hand: an anchor at HOT_RECENT% of his last RECENT_GAMES (default 90,
+                      i.e. 9/10) only needs HOT_VS% vs the opponent (default 50)
+  RECENT_GAMES        window for the recent-form bars (default 10)
+  STREAK              anchors need 2+ shots in each of their last N games (default 5)
+  TIGHT_TEAMS         skip shooters facing the N stingiest defenses (default 5)
   REQUIRE_PP1         "true" = only players on the first power-play unit
   FORCE               "true" = send the morning list now even if already sent
   CHECK               comma-separated player names: message whether each made today's
@@ -80,14 +88,25 @@ STATE_FILE = os.path.join(HERE, "state.json")
 LOG_FILE = os.path.join(HERE, "hitlist.csv")
 LOG_FIELDS = ["date", "section", "player", "player_id", "team", "opponent", "leg", "hit_pct",
               "fair_odds", "dk_odds", "dk_seen_at", "in_ticket", "actual_sog", "result", "units"]
-RECENT_GAMES = 20
+TAIL_KEEP = 20          # recent games kept per player (enough to measure streaks)
 SEASONS_BACK = 3
 THRESHOLDS = (2, 3, 4, 5)
-MIN_RECENT = 8          # need at least this many recent games to judge consistency
+MIN_RECENT = 8          # need at least this many recent games to judge consistency (capped at the window)
 ROLE_BLEND_GAMES = 5    # ice time blends toward this season fast, since line changes show quickly
 PP1_SIZE, PP1_MIN_SECS = 5, 60   # PP1 = team's top 5 skaters in PP time, with 1:00+ a game
+PP_UNIT_MIN_SECS = 30            # PP2 = the next 5, with 0:30+ a game
 SHRINK_GAMES = 15       # pull hit rates toward what the shot rate predicts, worth this many games
 DISPERSION = 0.25       # shot counts vary a bit more than Poisson: variance = mean x 1.25
+
+
+# The workflow passes every repo Variable as one JSON blob (ALL_VARS), so new settings
+# work without editing the workflow. Explicit environment values still win.
+try:
+    for _k, _v in json.loads(os.getenv("ALL_VARS") or "{}").items():
+        if _v not in (None, "") and not os.getenv(_k):
+            os.environ[_k] = str(_v)
+except (ValueError, AttributeError):
+    pass
 
 
 def env_num(name, default, cast=int):
@@ -101,25 +120,34 @@ SILENT = (os.getenv("TELEGRAM_SILENT", "") or "true").strip().lower() in ("1", "
 SEND_HOUR = env_num("SEND_HOUR", 7)
 SEND_MINUTE = env_num("SEND_MINUTE", 5)
 FOLLOWUP_UNTIL = env_num("FOLLOWUP_UNTIL", 12)
-LEAKY_TEAMS = env_num("LEAKY_TEAMS", 20)
-MIN_RATE = env_num("MIN_RATE", 1.8, float)
-MAX_RATE = env_num("MAX_RATE", 3.6, float)
+LEAKY_TEAMS = env_num("LEAKY_TEAMS", 32)
+TIGHT_TEAMS = env_num("TIGHT_TEAMS", 5)       # skip shooters facing the 5 stingiest defenses
+RECENT_GAMES = env_num("RECENT_GAMES", 10)    # "last N" window for the recent-form bars
+STREAK = env_num("STREAK", 5)                 # must have 2+ shots in each of his last N games
+MIN_RATE = env_num("MIN_RATE", 1.5, float)
+MAX_RATE = env_num("MAX_RATE", 5, float)
 RECENT_HIT = env_num("RECENT_HIT", 80, float) / 100
-VS_HIT = env_num("VS_HIT", 85, float) / 100
+VS_HIT = env_num("VS_HIT", 80, float) / 100
 VS_MIN_GAMES = env_num("VS_MIN_GAMES", 4)
 HOT_RECENT = env_num("HOT_RECENT", 90, float) / 100   # hot hand: 18/20+ recently...
 HOT_VS = env_num("HOT_VS", 50, float) / 100           # ...only needs 50%+ vs the opponent
 PLUS_RECENT_HIT = env_num("PLUS_RECENT_HIT", 65, float) / 100
 PLUS_VS_HIT = env_num("PLUS_VS_HIT", 80, float) / 100
-MAX_JUICE = env_num("MAX_JUICE", -400)
-PLUS_EDGE = env_num("PLUS_EDGE", 5, float) / 100
+MAX_JUICE = env_num("MAX_JUICE", -375)
+PLUS_EDGE = env_num("PLUS_EDGE", 0, float) / 100
+PLUS_K = env_num("PLUS_K", 3)                  # the 3+ shots section
+ANCHOR_MAX_K = env_num("ANCHOR_MAX_K", 2)      # anchors are 2+ legs; 3+ legs go in their own section
+PLUS_STREAK = env_num("PLUS_STREAK", 5)        # 3+ shots in each of his last N games
+PLUS_MIN_PRICE = env_num("PLUS_MIN_PRICE", -110)  # DK price must be -110 or better
 ANCHORS = env_num("ANCHORS", 6)
 PLUS_LEGS = env_num("PLUS_LEGS", 3)
 ODDS_MONTHLY_CAP = env_num("ODDS_MONTHLY_CAP", 75)
 ODDS_RESERVE = env_num("ODDS_RESERVE", 200)
-BLEND_GAMES = env_num("BLEND_GAMES", 10, float)
+BLEND_GAMES = env_num("BLEND_GAMES", 10, float)            # player shot rates
+TEAM_BLEND_GAMES = env_num("TEAM_BLEND_GAMES", 0, float)   # team shots allowed (0 = this season only)
 TOP_FORWARDS = env_num("TOP_FORWARDS", 6)     # top 6 forwards by ice time = lines 1-2
-PP1_TOP_FORWARDS = env_num("PP1_TOP_FORWARDS", 9)  # PP1 forwards also count if top 9 in ice time
+PP1_TOP_FORWARDS = env_num("PP1_TOP_FORWARDS", 9)  # power-play forwards also count if top 9 in ice time
+PP_UNITS = env_num("PP_UNITS", 2)                  # 1 = PP1 only, 2 = PP1 or PP2
 TOP_D = env_num("TOP_D", 4)                   # top 4 D by ice time = pairs 1-2
 REQUIRE_PP1 = os.getenv("REQUIRE_PP1", "").strip().lower() in ("1", "true", "yes")
 CHECK = os.getenv("CHECK", "").strip()
@@ -263,8 +291,8 @@ def leaky_ranking(day, abbrevs):
     for key, ab in abbrevs.items():
         c, l = cur.get(key, {}), last.get(key, {})
         gp, sa, l_sa = c.get("gamesPlayed") or 0, c.get("shotsAgainstPerGame"), l.get("shotsAgainstPerGame")
-        if BLEND_GAMES > 0 and l_sa is not None:
-            value = ((sa or 0) * gp + l_sa * BLEND_GAMES) / (gp + BLEND_GAMES)
+        if TEAM_BLEND_GAMES > 0 and l_sa is not None:
+            value = ((sa or 0) * gp + l_sa * TEAM_BLEND_GAMES) / (gp + TEAM_BLEND_GAMES)
         elif gp and sa is not None:
             value = sa
         else:
@@ -303,8 +331,9 @@ def team_roles(players, toi_cur, toi_last):
     pp_ranked = sorted(info, key=lambda p: info[p]["pp"], reverse=True)
     for i, p in enumerate(pp_ranked, 1):
         info[p]["pp1"] = i <= PP1_SIZE and info[p]["pp"] >= PP1_MIN_SECS
-        # A first-unit power-play forward on the third line still gets real chances.
-        if (info[p]["pos"] == "F" and info[p]["pp1"] and not info[p]["top"]
+        info[p]["pp_unit"] = i <= PP1_SIZE * PP_UNITS and info[p]["pp"] >= PP_UNIT_MIN_SECS
+        # A power-play forward (PP1, or PP2 when PP_UNITS=2) on the third line still gets chances.
+        if (info[p]["pos"] == "F" and info[p]["pp_unit"] and not info[p]["top"]
                 and info[p]["rank"] <= PP1_TOP_FORWARDS and info[p]["toi"] > 0):
             info[p]["top"] = True
     return info
@@ -355,7 +384,7 @@ def past_summary(pid, day, state):
             v[1] += shots
             for i, k in enumerate(THRESHOLDS):
                 v[2 + i] += shots >= k
-        state["past"][key] = {"tail": [s for _, _, s in games[:RECENT_GAMES]],
+        state["past"][key] = {"tail": [s for _, _, s in games[:TAIL_KEEP]],
                               "last": games[0][0] if games else "", "vs": vs}
     return state["past"][key]
 
@@ -379,10 +408,19 @@ def evaluate(pid, name, pos, team, opp, rate, day, state):
     """Hit rates at each milestone from recent form + history vs this opponent."""
     cur = [g for g in season_games(pid, season_id(day)) if g[0] < day.isoformat()]
     past = past_summary(pid, day, state)
-    recent = [s for _, _, s in cur][:RECENT_GAMES]
-    recent += past["tail"][:RECENT_GAMES - len(recent)]
-    if len(recent) < MIN_RECENT:
+    history = ([s for _, _, s in cur] + past["tail"])[:TAIL_KEEP]   # newest first
+    recent = history[:RECENT_GAMES]
+    if len(recent) < min(MIN_RECENT, RECENT_GAMES):
         return None
+    streaks = {}
+    for k in THRESHOLDS:
+        n = 0
+        for shots in history:
+            if shots < k:
+                break
+            n += 1
+        streaks[str(k)] = n
+    streak = streaks["2"]
     pv = past["vs"].get(opp, [0, 0] + [0] * len(THRESHOLDS))
     cur_vs = [s for _, o, s in cur if o == opp]
     v_n, v_sum = pv[0] + len(cur_vs), pv[1] + sum(cur_vs)
@@ -395,8 +433,13 @@ def evaluate(pid, name, pos, team, opp, rate, day, state):
         prior = chance_at_least(rate, k)
         probs[str(k)] = (r_hits + v_hits + prior * SHRINK_GAMES) / (len(recent) + v_n + SHRINK_GAMES)
         detail[str(k)] = (r_hits, v_hits)
+    def txt(n):
+        return f"{n}+" if n == len(history) and n >= TAIL_KEEP else str(n)
     return {"pid": pid, "name": name, "pos": pos, "team": team, "opp": opp, "rate": rate,
-            "probs": probs, "detail": detail, "r_n": len(recent), "v_n": v_n,
+            "streaks": streaks, "streak_txts": {k: txt(n) for k, n in streaks.items()},
+            "streak_txt": txt(streak),
+            "probs": probs, "detail": detail, "r_n": len(recent), "v_n": v_n, "streak": streak,
+            "last_shots": history[0] if history else None,
             "vs_avg": v_sum / v_n if v_n else None,
             "last_played": cur[0][0] if cur else past["last"]}
 
@@ -413,14 +456,21 @@ def record(c, k):
     return (r_hits + v_hits) / (c["r_n"] + c["v_n"])
 
 
+def streak_at(c, k):
+    return c.get("streaks", {}).get(str(k), c.get("streak", 0) if k == 2 else 0)
+
+
 def anchor_ok(c, k):
-    """Normal bar, or the hot-hand bar: 18/20+ recently with a 50%+ record vs the opponent."""
+    """A current streak at this milestone, plus the normal bar or the hot-hand bar
+    (e.g. 9/10 recently with a 50%+ record vs the opponent)."""
+    if streak_at(c, k) < STREAK:
+        return False
     return passes(c, k, RECENT_HIT, VS_HIT) or passes(c, k, HOT_RECENT, HOT_VS)
 
 
 def anchor_leg(c):
     """Biggest milestone that clears the anchor bar."""
-    ks = [k for k in THRESHOLDS if anchor_ok(c, k)]
+    ks = [k for k in THRESHOLDS if k <= ANCHOR_MAX_K and anchor_ok(c, k)]
     return max(ks) if ks else None
 
 
@@ -509,7 +559,8 @@ def research(day, state):
     """The NHL-data part of the list (no odds). Saved for the day so follow-ups reuse it."""
     abbrevs = team_abbrevs()
     ranking = leaky_ranking(day, abbrevs)
-    leaky = {ab for ab, _, _ in ranking[:LEAKY_TEAMS]}
+    in_play = min(LEAKY_TEAMS, len(ranking) - TIGHT_TEAMS)   # ranking: most shots allowed first
+    leaky = {ab for ab, _, _ in ranking[:in_play]}
     games = [g for g in nhl_get(f"{NHL_WEB}/score/{day.isoformat()}").get("games", [])
              if g.get("gameScheduleState", "OK") == "OK"]
     matchups = []
@@ -546,7 +597,7 @@ def research(day, state):
         team_last[c["team"]] = max(team_last.get(c["team"], ""), c["last_played"])
     for c in cands:
         c["missed"] = c["last_played"] < team_last[c["team"]]
-    return {"date": day.isoformat(), "abbrevs": abbrevs, "ranking": ranking[:LEAKY_TEAMS],
+    return {"date": day.isoformat(), "abbrevs": abbrevs, "ranking": ranking[:in_play],
             "matchups": matchups, "cands": cands}
 
 
@@ -559,22 +610,33 @@ def select(rs, day, now, state, spend=True):
     anchors.sort(key=lambda c: (record(c, c["k"]), c["probs"][str(c["k"])]), reverse=True)
     plus_pool = []
     for c in cands:
-        k = max(3, (anchor_leg(c) or 2) + 1)
-        if str(k) in c["probs"] and passes(c, k, PLUS_RECENT_HIT, PLUS_VS_HIT):
+        k = PLUS_K
+        if anchor_leg(c) == k:
+            continue                       # already listed as an anchor at this milestone
+        if (str(k) in c["probs"] and streak_at(c, k) >= PLUS_STREAK
+                and passes(c, k, PLUS_RECENT_HIT, PLUS_VS_HIT)):
             plus_pool.append(dict(c, k=k))
     plus_pool.sort(key=lambda c: (record(c, c["k"]), c["probs"][str(c["k"])]), reverse=True)
-    shortlist = anchors[:ANCHORS * 2] + plus_pool[:PLUS_LEGS * 3]
-    games_wanted = []
-    for c in shortlist:
-        g = (c["team"], c["opp"])
-        if g not in games_wanted and (g[1], g[0]) not in games_wanted:
-            games_wanted.append(g)
+    # Price games one at a time, in order of need, so credits only go to games whose
+    # players could still make the list (an overpriced star doesn't use up the slots).
+    have, note, tried, unpriced = {}, None, set(), []
 
-    have, note = dk_prices(games_wanted, day, now, state, abbrevs, spend)
+    def price_for(c):
+        nonlocal have, note
+        g = (c["team"], c["opp"])
+        key = frozenset(g)
+        if key not in tried and note is None:
+            tried.add(key)
+            have, note = dk_prices([g], day, now, state, abbrevs, spend)
+        price, seen = dk_price(c, c["k"], have)
+        if price is None and not any(frozenset(u) == key for u in unpriced):
+            if "|".join(g) not in have and "|".join(g[::-1]) not in have:
+                unpriced.append(g)
+        return price, seen
 
     final_anchors = []
     for c in anchors:
-        price, seen = dk_price(c, c["k"], have)
+        price, seen = price_for(c)
         if price is not None and price < MAX_JUICE:
             continue                       # overpriced: not worth a parlay slot
         final_anchors.append(dict(c, price=price, seen=seen, p=c["probs"][str(c["k"])]))
@@ -582,13 +644,14 @@ def select(rs, day, now, state, spend=True):
             break
     final_plus = []
     for c in plus_pool:
-        price, seen = dk_price(c, c["k"], have)
+        if len(final_plus) == PLUS_LEGS:
+            break
+        price, seen = price_for(c)
         p = c["probs"][str(c["k"])]
-        if price is not None and price >= 100 and p - implied(price) >= PLUS_EDGE:
+        if price is not None and price >= PLUS_MIN_PRICE and p - implied(price) >= PLUS_EDGE:
             final_plus.append(dict(c, price=price, seen=seen, p=p))
-    final_plus = final_plus[:PLUS_LEGS]
-
-    unpriced = [g for g in games_wanted if "|".join(g) not in have and "|".join(g[::-1]) not in have]
+    if not have:
+        have = state.get("dk", {}).get("games", {})
     return {"ranking": rs["ranking"], "matchups": matchups,
             "anchors": final_anchors, "plus": final_plus, "unpriced": unpriced,
             "note": note, "ticket": build_ticket(final_anchors)}
@@ -635,16 +698,18 @@ def format_list(day, res, followup=False):
         else:
             price = f"DK {fmt_price(a['price'])}" + (" ✓" if a["p"] > implied(a["price"]) + 0.03 else "")
         return (f"{prefix}{a['name']} ({a['team']}) {a['k']}+ vs {a['opp']} · (f {to_american(a['p'])}) · "
-                f"{price} · L{a['r_n']} {r_hits}/{a['r_n']} · vs {a['opp']} {a['k']}+ in {v_hits}/{a['v_n']}")
+                f"{price} · L{a['r_n']} {r_hits}/{a['r_n']} "
+                f"({a.get('streak_txts', {}).get(str(a['k']), a.get('streak_txt', 0))} straight) · "
+                f"vs {a['opp']} {a['k']}+ in {v_hits}/{a['v_n']}")
 
     if res["anchors"]:
         out.append("ANCHORS")
         out += [leg_line(a, f"{i}. ") for i, a in enumerate(res["anchors"], 1)]
     if res["plus"]:
-        out.append("\nPLUS-MONEY SHOOTERS")
+        out.append(f"\n{PLUS_K}+ SHOOTERS ({fmt_price(PLUS_MIN_PRICE)} or better)")
         out += [leg_line(p, "") for p in res["plus"]]
     elif res["anchors"]:
-        out.append("\nPLUS-MONEY SHOOTERS: none tonight")
+        out.append(f"\n{PLUS_K}+ SHOOTERS: none tonight")
     t = res["ticket"]
     if t:
         names = ", ".join(f"{a['name'].split()[-1]} {a['k']}+" for a in t["legs"])
@@ -733,7 +798,7 @@ def season_line(rows):
         parts.append(f"anchors {sum(r['result'] == 'W' for r in a)}/{len(a)}")
     if p:
         u = sum(float(r["units"] or 0) for r in p)
-        parts.append(f"plus-money {sum(r['result'] == 'W' for r in p)}-{sum(r['result'] == 'L' for r in p)} {u:+.1f}u")
+        parts.append(f"{PLUS_K}+ shooters {sum(r['result'] == 'W' for r in p)}-{sum(r['result'] == 'L' for r in p)} {u:+.1f}u")
     tickets = {}
     for r in rows:
         if r["in_ticket"] == "Y":
@@ -766,7 +831,7 @@ def check_players(names, day, now, state):
     for i, a in enumerate(res["anchors"], 1):
         listed[a["pid"]] = f"anchor #{i}: {a['k']}+ at {a['p']:.0%}" + (f", DK {fmt_price(a['price'])}" if a["price"] is not None else "")
     for p in res["plus"]:
-        listed.setdefault(p["pid"], f"plus-money: {p['k']}+ at DK {fmt_price(p['price'])}, hits {p['p']:.0%}")
+        listed.setdefault(p["pid"], f"{PLUS_K}+ shooters: {p['k']}+ at DK {fmt_price(p['price'])}, hits {p['p']:.0%}")
     ranking = leaky_ranking(day, rs["abbrevs"])
     sa_rank = {ab: i for i, (ab, _, _) in enumerate(ranking, 1)}
     opp_of = {}
@@ -799,6 +864,7 @@ def check_players(names, day, now, state):
         facts = (f"{rate:.1f} shots/gm · {fmt_toi(role['toi'])} TOI {pos}#{role['rank']}"
                  + (" PP1" if role["pp1"] else "") + f" · vs {opp} (#{sa_rank.get(opp, '?')} in shots allowed)")
         if c:
+            facts += f" · last game {c.get('last_shots')} SOG, {c.get('streak_txt', c.get('streak', 0))} straight at 2+"
             facts += "\n   " + " · ".join(
                 f"{k}+: L{c['r_n']} {c['detail'][str(k)][0]}/{c['r_n']}, vs {opp} {c['detail'][str(k)][1]}/{c['v_n']}"
                 for k in (2, 3))
@@ -806,9 +872,12 @@ def check_players(names, day, now, state):
             out.append(f"✅ {name} ({team}) on the list, {listed[pid]}\n   {facts}")
             continue
         top_n = TOP_FORWARDS if pos == "F" else TOP_D
-        if pos == "F" and role["pp1"]:
+        if pos == "F" and role.get("pp_unit"):
             top_n = PP1_TOP_FORWARDS
-        if sa_rank.get(opp, 99) > LEAKY_TEAMS:
+        n_teams = len(ranking)
+        if sa_rank.get(opp, 0) > n_teams - TIGHT_TEAMS:
+            why = f"{opp} is a top-{TIGHT_TEAMS} tight defense (#{n_teams - sa_rank[opp] + 1} fewest shots allowed)"
+        elif sa_rank.get(opp, 99) > LEAKY_TEAMS:
             why = f"{opp} isn't a top-{LEAKY_TEAMS} leaky defense"
         elif not role["top"]:
             why = f"not top {top_n} {pos} on {team} in ice time"
@@ -823,13 +892,18 @@ def check_players(names, day, now, state):
             why = "missed his team's last game"
         elif not anchor_leg(c):
             r2, v2 = c["detail"]["2"]
-            if c["v_n"] < VS_MIN_GAMES:
+            if c.get("streak", 0) < STREAK:
+                why = (f"2+ streak is {c.get('streak', 0)} game(s); needs {STREAK} "
+                       f"(last game: {c.get('last_shots')} SOG)")
+            elif r2 / c["r_n"] < min(RECENT_HIT, HOT_RECENT):
+                why = f"2+ in {r2}/{c['r_n']} of his last {c['r_n']}, under the {RECENT_HIT:.0%} bar"
+            elif c["v_n"] < VS_MIN_GAMES:
                 why = f"only {c['v_n']} game(s) vs {opp}; needs {VS_MIN_GAMES}+ to count"
             elif v2 / c["v_n"] < VS_HIT and r2 / c["r_n"] >= HOT_RECENT:
                 why = f"2+ in {v2}/{c['v_n']} vs {opp}, under even the hot-hand {HOT_VS:.0%} bar"
             elif v2 / c["v_n"] < VS_HIT:
                 why = (f"2+ in {v2}/{c['v_n']} vs {opp}, under the {VS_HIT:.0%} bar "
-                       f"(or {HOT_VS:.0%} with 18/20+ recently; he's {r2}/{c['r_n']})")
+                       f"(or {HOT_VS:.0%} with {HOT_RECENT:.0%}+ recently; he's {r2}/{c['r_n']})")
             else:
                 why = f"2+ in {r2}/{c['r_n']} of his last {c['r_n']}, under the {RECENT_HIT:.0%} bar"
         else:
