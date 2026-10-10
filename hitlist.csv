@@ -12,8 +12,10 @@ date,section,player,player_id,team,opponent,leg,hit_pct,fair_odds,dk_odds,dk_see
 2026-10-09,anchor,Pavel Dorofeyev,8481604,NYR,WSH,2,80,-412,-380,15:33,Y,4,W,+0.26
 2026-10-09,anchor,Bobby McMann,8482259,SEA,DET,2,80,-393,-270,15:43,Y,3,W,+0.37
 2026-10-09,anchor,Moritz Seider,8481542,DET,SEA,2,75,-300,-220,15:43,Y,1,L,-1.00
+2026-10-10,anchor,Nick Schmaltz,8477951,UTA,BUF,2,82,-465,-275,08:42,Y,,,
 2026-10-10,anchor,Sam Reinhart,8477933,FLA,MIN,2,78,-352,-320,07:05,Y,,,
 2026-10-10,anchor,Mason McTavish,8482745,STL,CBJ,2,75,-305,-225,07:05,Y,,,
 2026-10-10,anchor,Bo Horvat,8477500,NYI,TBL,2,83,-476,,07:05,,,,
 2026-10-10,anchor,Jack Roslovic,8478458,TOR,COL,2,72,-256,-150,07:05,Y,,,
 2026-10-10,anchor,Vasily Podkolzin,8481617,EDM,SJS,2,72,-255,-260,08:23,,,,
+2026-10-10,fun,Mason McTavish,8482745,STL,CBJ,3,57,-131,+130,07:05,,,,
