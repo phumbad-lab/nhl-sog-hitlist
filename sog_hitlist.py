@@ -42,6 +42,8 @@ Environment variables:
   PLUS_VS_HIT         3+ section: vs-opponent share, percent (default 80)
   PLUS_STREAK         3+ section: 3+ shots in each of his last N games (default 5)
   PLUS_MIN_PRICE      3+ section: DK price must be this or better (default -110)
+  FUN_K, FUN_MIN_PRICE  fun bet: milestone and lowest DK price (default 3+, +100)
+  FUN_RECENT_HIT, FUN_STREAK  fun bet form: % of last 10 at the milestone (60) and 2+ streak (3)
   ANCHOR_MAX_K        biggest milestone an anchor can be (default 2; 3+ legs have their own section)
   PP_UNITS            1 = only PP1 forwards get the top-9 exception, 2 = PP1 or PP2 (default 2)
   MAX_JUICE           skip anchors DK prices shorter than this (default -375)
@@ -58,7 +60,7 @@ Environment variables:
                       i.e. 9/10) only needs HOT_VS% vs the opponent (default 50)
   RECENT_GAMES        window for the recent-form bars (default 10)
   STREAK              anchors need 2+ shots in each of their last N games (default 5)
-  TIGHT_TEAMS         skip shooters facing the N stingiest defenses (default 5)
+  TIGHT_TEAMS         skip shooters facing the N stingiest defenses (default 0 = every opponent in play)
   REQUIRE_PP1         "true" = only players on the first power-play unit
   FORCE               "true" = send the morning list now even if already sent
   CHECK               comma-separated player names: message whether each made today's
@@ -121,7 +123,7 @@ SEND_HOUR = env_num("SEND_HOUR", 7)
 SEND_MINUTE = env_num("SEND_MINUTE", 5)
 FOLLOWUP_UNTIL = env_num("FOLLOWUP_UNTIL", 12)
 LEAKY_TEAMS = env_num("LEAKY_TEAMS", 32)
-TIGHT_TEAMS = env_num("TIGHT_TEAMS", 5)       # skip shooters facing the 5 stingiest defenses
+TIGHT_TEAMS = env_num("TIGHT_TEAMS", 0)       # skip shooters facing the N stingiest defenses (0 = off)
 RECENT_GAMES = env_num("RECENT_GAMES", 10)    # "last N" window for the recent-form bars
 STREAK = env_num("STREAK", 5)                 # must have 2+ shots in each of his last N games
 MIN_RATE = env_num("MIN_RATE", 1.5, float)
@@ -136,6 +138,10 @@ PLUS_VS_HIT = env_num("PLUS_VS_HIT", 80, float) / 100
 MAX_JUICE = env_num("MAX_JUICE", -375)
 PLUS_EDGE = env_num("PLUS_EDGE", 0, float) / 100
 PLUS_K = env_num("PLUS_K", 3)                  # the 3+ shots section
+FUN_K = env_num("FUN_K", 3)                    # fun bet milestone
+FUN_MIN_PRICE = env_num("FUN_MIN_PRICE", 100)  # fun bet must pay plus money
+FUN_RECENT_HIT = env_num("FUN_RECENT_HIT", 60, float) / 100   # 3+ in 6 of his last 10
+FUN_STREAK = env_num("FUN_STREAK", 3)          # and 2+ shots in each of his last 3 games
 ANCHOR_MAX_K = env_num("ANCHOR_MAX_K", 2)      # anchors are 2+ legs; 3+ legs go in their own section
 PLUS_STREAK = env_num("PLUS_STREAK", 5)        # 3+ shots in each of his last N games
 PLUS_MIN_PRICE = env_num("PLUS_MIN_PRICE", -110)  # DK price must be -110 or better
@@ -639,7 +645,9 @@ def select(rs, day, now, state, spend=True):
         price, seen = price_for(c)
         if price is not None and price < MAX_JUICE:
             continue                       # overpriced: not worth a parlay slot
-        final_anchors.append(dict(c, price=price, seen=seen, p=c["probs"][str(c["k"])]))
+        g = (c["team"], c["opp"])
+        posted = "|".join(g) in have or "|".join(g[::-1]) in have
+        final_anchors.append(dict(c, price=price, seen=seen, p=c["probs"][str(c["k"])], game_posted=posted))
         if len(final_anchors) == ANCHORS:
             break
     final_plus = []
@@ -652,17 +660,33 @@ def select(rs, day, now, state, spend=True):
             final_plus.append(dict(c, price=price, seen=seen, p=p))
     if not have:
         have = state.get("dk", {}).get("games", {})
-    return {"ranking": rs["ranking"], "matchups": matchups,
+
+    # Fun bet: the plus-money 3+ leg most likely to hit, among players in form.
+    # Uses games already priced today, so it costs no extra credits.
+    fun, taken = None, {c["pid"] for c in final_plus}
+    for c in cands:
+        if c["pid"] in taken or str(FUN_K) not in c["probs"]:
+            continue
+        r_hits, _ = c["detail"][str(FUN_K)]
+        if r_hits / c["r_n"] < FUN_RECENT_HIT or streak_at(c, 2) < FUN_STREAK:
+            continue
+        leg = dict(c, k=FUN_K)
+        price, seen = dk_price(leg, FUN_K, have)
+        if price is None or price < FUN_MIN_PRICE:
+            continue
+        p = c["probs"][str(FUN_K)]
+        if fun is None or (p, price) > (fun["p"], fun["price"]):
+            fun = dict(leg, price=price, seen=seen, p=p)
+    return {"ranking": rs["ranking"], "matchups": matchups, "fun": fun,
             "anchors": final_anchors, "plus": final_plus, "unpriced": unpriced,
             "note": note, "ticket": build_ticket(final_anchors)}
 
 
 def build_ticket(anchors):
-    """Stack the best-value anchors until the ticket pays about +200: max 4 legs, 2 per game."""
-    def value(a):
-        return a["p"] - implied(a["price"]) if a["price"] is not None else -1 + a["p"]
+    """Stack the anchors most likely to hit until the ticket pays about +200: max 4 legs,
+    2 per game. Legs DK has priced come first, so the ticket price is real."""
     legs, dec, prob, per_game = [], 1.0, 1.0, {}
-    for a in sorted(anchors, key=value, reverse=True):
+    for a in sorted(anchors, key=lambda a: (a["price"] is not None, a["p"]), reverse=True):
         price = a["price"]
         game = frozenset((a["team"], a["opp"]))
         if per_game.get(game, 0) == 2:
@@ -689,12 +713,12 @@ def format_list(day, res, followup=False):
     out = []
     if not res["matchups"]:
         return title, "None of tonight's games are against a leaky defense."
-    if not res["anchors"] and not res["plus"]:
+    if not res["anchors"] and not res["plus"] and not res.get("fun"):
         out.append("No consistent mid-tier shooters clear the bar tonight.")
     def leg_line(a, prefix):
         r_hits, v_hits = a["detail"][str(a["k"])]
         if a["price"] is None:
-            price = "DK not up"
+            price = "no DK line" if a.get("game_posted") else "DK not up"
         else:
             price = f"DK {fmt_price(a['price'])}" + (" ✓" if a["p"] > implied(a["price"]) + 0.03 else "")
         return (f"{prefix}{a['name']} ({a['team']}) {a['k']}+ vs {a['opp']} · (f {to_american(a['p'])}) · "
@@ -710,6 +734,13 @@ def format_list(day, res, followup=False):
         out += [leg_line(p, "") for p in res["plus"]]
     elif res["anchors"]:
         out.append(f"\n{PLUS_K}+ SHOOTERS: none tonight")
+    f = res.get("fun")
+    if f:
+        r_hits, v_hits = f["detail"][str(f["k"])]
+        out.append(f"\nFUN BET")
+        out.append(f"{f['name']} ({f['team']}) {f['k']}+ vs {f['opp']} · DK {fmt_price(f['price'])} · "
+                   f"history {f['p']:.0%} vs DK {implied(f['price']):.0%} · L{f['r_n']} {r_hits}/{f['r_n']} · "
+                   f"vs {f['opp']} {f['k']}+ in {v_hits}/{f['v_n']} · {f.get('streak_txt', 0)} straight at 2+")
     t = res["ticket"]
     if t:
         names = ", ".join(f"{a['name'].split()[-1]} {a['k']}+" for a in t["legs"])
@@ -727,7 +758,8 @@ def log_today(day, res):
     """Replace today's rows with the current list (a follow-up adds prices)."""
     rows = [r for r in load_log() if r["date"] != day.isoformat()]
     ticket = {a["pid"] for a in (res["ticket"] or {}).get("legs", [])}
-    for section, legs in (("anchor", res["anchors"]), ("plus", res["plus"])):
+    fun = [res["fun"]] if res.get("fun") else []
+    for section, legs in (("anchor", res["anchors"]), ("plus", res["plus"]), ("fun", fun)):
         for a in legs:
             rows.append({"date": day.isoformat(), "section": section, "player": a["name"],
                          "player_id": a["pid"], "team": a["team"], "opponent": a["opp"], "leg": a["k"],
@@ -778,7 +810,7 @@ def grade(day):
     lines = ["Yesterday:"]
     for r in graded:
         mark = {"W": "✅", "L": "❌"}.get(r["result"], "void")
-        tag = " (plus)" if r["section"] == "plus" else ""
+        tag = {"plus": f" ({PLUS_K}+ shooter)", "fun": " (fun bet)"}.get(r["section"], "")
         shots = r["actual_sog"] if r["actual_sog"] != "" else "-"
         lines.append(f"{mark} {r['player']} {r['leg']}+{tag}: {shots}")
     for d in sorted({r["date"] for r in graded}):
@@ -799,6 +831,10 @@ def season_line(rows):
     if p:
         u = sum(float(r["units"] or 0) for r in p)
         parts.append(f"{PLUS_K}+ shooters {sum(r['result'] == 'W' for r in p)}-{sum(r['result'] == 'L' for r in p)} {u:+.1f}u")
+    f = [r for r in rows if r["section"] == "fun" and r.get("result") in ("W", "L")]
+    if f:
+        u = sum(float(r["units"] or 0) for r in f)
+        parts.append(f"fun bets {sum(r['result'] == 'W' for r in f)}-{sum(r['result'] == 'L' for r in f)} {u:+.1f}u")
     tickets = {}
     for r in rows:
         if r["in_ticket"] == "Y":

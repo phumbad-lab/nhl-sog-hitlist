@@ -15,6 +15,9 @@ ANCHORS
 
 3+ SHOOTERS: none tonight
 
+FUN BET
+Mason McTavish (STL) 3+ vs CBJ · DK +130 · history 57% vs DK 43% · L10 7/10 · vs CBJ 3+ in 4/5 · 8 straight at 2+
+
 TICKET: Keller 2+, Ehlers 2+, Makar 2+ → DK ≈ +144 · hits 51% on history
 
 Yesterday:
@@ -27,7 +30,7 @@ Credits: 452 left
 ```
 
 ## How players are picked
-1. **Opponent:** shooters facing one of the **5 tightest defenses** (fewest shots allowed per game, e.g. Carolina) are skipped. Every other matchup is fair game.
+1. **Opponent:** every game is in play, whoever the opponent. Set `TIGHT_TEAMS` to skip shooters facing the N stingiest defenses (e.g. `5`).
 2. **Top-two lines:** only players in their team's **top 6 forwards or top 4 defensemen by ice time** are considered (lines 1–2 and pairs 1–2). A forward on the **first or second power-play unit** also counts if he's in the **top 9**. Ice time leans on this season and switches over after about 5 games.
 3. **Mid-tier shooters:** of those, it keeps skaters averaging **1.5 to 5 shots a game**. Stars are allowed; the -375 price limit drops their overpriced legs. Anyone who missed his team's last game (injury or scratch) is dropped.
 4. **Power play:** **PP1** is the team's top 5 skaters in power-play time with 1:00+ a game. Set `REQUIRE_PP1` to `true` to list only PP1 players.
@@ -36,7 +39,8 @@ Credits: 452 left
 7. **Anchors (2+):** 2+ legs that clear all of the above. Legs DK prices shorter than **-375** are dropped. The fair price blends his record with what a typical shooter at his rate does, since hot streaks cool off.
    Each line reads e.g. `L10 9/10 (8 straight)`: 9 of his last 10 games at the milestone, and 8 games in a row at 2+.
 8. **3+ shooters:** 3+ legs with **3+ shots in each of his last 5 games**, 3+ in **65%+ of his last 10** and **80%+ of 4+ games vs the opponent**, and a DK price of **-110 or better**. Many nights this section is empty.
-9. **Ticket:** the best-value anchors stacked until the price reaches about +200, with at most 4 legs and at most 2 from one game.
+9. **Fun bet:** one plus-money 3+ leg a day: the one **most likely to hit**, by his history (ties go to the better price). The player needs **3+ in 6 of his last 10** and **2+ in each of his last 3 games**, and DK must pay **+100 or better**. It only uses games already priced that day, so it costs no extra credits. Example: `history 57% vs DK 43%` means he's hit 3+ about 57% of the time, and DK's +130 implies 43%.
+10. **Ticket:** the anchors **most likely to hit**, stacked until the price reaches about +200, with at most 4 legs and at most 2 from one game.
 
 **Reading a line:** `(f -475) · DK -275 ✓` means the fair price is -475 and DK is only asking -275; ✓ marks DK's price as better than fair (`DK not up` if DK hasn't posted yet). The fair price comes from his record (here 17/20 recently and 6/6 vs BOS, 23/26 combined) pulled slightly toward what a typical shooter at his rate does, since hot streaks cool off. That works out to about an 83% chance, worth -475.
 
@@ -84,7 +88,7 @@ Add any of these as a repository variable and it takes effect on the next run. T
 |---|---|---|
 | `SEND_HOUR` / `SEND_MINUTE` | Send at or after this time, Eastern | `7` / `5` |
 | `FOLLOWUP_UNTIL` | Last hour for the DK-prices follow-up | `12` |
-| `TIGHT_TEAMS` | Skip shooters facing this many of the stingiest defenses | `5` |
+| `TIGHT_TEAMS` | Skip shooters facing this many of the stingiest defenses (`0` = off) | `0` |
 | `LEAKY_TEAMS` | Older setting: only use opponents in the top N for shots allowed (`32` = all) | `32` |
 | `RECENT_GAMES` | Window for the recent-form bars ("last N") | `10` |
 | `STREAK` | Anchors need 2+ shots in each of their last N games | `5` |
@@ -95,6 +99,8 @@ Add any of these as a repository variable and it takes effect on the next run. T
 | `PLUS_STREAK` | 3+ section: 3+ shots in each of his last N games | `5` |
 | `PLUS_MIN_PRICE` | 3+ section: DK price must be this or better | `-110` |
 | `PP_UNITS` | `1` = only PP1 forwards get the top-9 exception, `2` = PP1 or PP2 | `2` |
+| `FUN_K` / `FUN_MIN_PRICE` | Fun bet milestone and lowest DK price | `3` / `100` |
+| `FUN_RECENT_HIT` / `FUN_STREAK` | Fun bet form: % of last 10 at the milestone, and 2+ streak | `60` / `3` |
 | `ANCHOR_MAX_K` | Biggest milestone an anchor can be (3+ legs have their own section) | `2` |
 | `MAX_JUICE` | Drop anchors DK prices shorter than this | `-375` |
 | `PLUS_EDGE` | Points a 3+ leg's estimate must beat DK's price by | `0` |
