@@ -61,13 +61,6 @@ Last names are fine unless two players share one. A check uses no odds credits, 
 
 **Check your settings:** type `settings` in the **check** box when you run the workflow. You get a message listing every setting the bot is using, with `*` next to the ones set in your Variables tab.
 
-## Texting the bot
-Send your bot a player's last name in Telegram, e.g. `dorofeyev`, or several separated by commas: `kadri, raddysh`. Within about 1–3 minutes it replies with the same breakdown as **check**: whether he made today's list and, if not, which rule cut him. You can also text `settings` (every value the bot is using) or `help`.
-
-- Only messages from your own chat are answered; anyone else who finds the bot is ignored.
-- Replies never change the day's list or log, and use no odds credits.
-- It runs from the **SOG replies** workflow. cron-job.org starts it every 2 minutes, with GitHub's own schedule (every 10 minutes, 8 AM to midnight) as a backup.
-
 ## DraftKings prices and credits
 - Prices come from DK's milestone market only, and only for games with a shortlisted player. That's 1 credit per game, about 2–5 credits a day.
 - **Monthly cap: 75 credits** (`ODDS_MONTHLY_CAP`).
