@@ -36,7 +36,7 @@ Credits: 452 left
 4. **Power play:** **PP1** is the team's top 5 skaters in power-play time with 1:00+ a game. Set `REQUIRE_PP1` to `true` to list only PP1 players.
 5. **Hot hand required:** he must have **2+ shots in each of his last 5 games** (a 0 last game rules him out), and **2+ in 8 of his last 10**.
 6. **Head-to-head:** **80%+ of his games vs tonight's opponent, with at least 4 of them** (4/4, 5/6, 6/7...). A 1/2 or 2/4 history doesn't count. **Hot-hand exception:** at **9/10 or better** recently, he only needs **50%+** vs the opponent (still in 4+ games).
-7. **Anchors (2+):** 2+ legs that clear all of the above. Legs DK prices shorter than **-375** are dropped. The fair price blends his record with what a typical shooter at his rate does, since hot streaks cool off.
+7. **Anchors (2+):** 2+ legs that clear all of the above, **ranked by chance of hitting** (#1 has the shortest fair price). Legs DK prices shorter than **-375** are dropped. The fair price blends his record with what a typical shooter at his rate does, since hot streaks cool off.
    Each line reads e.g. `L10 9/10 (8 straight)`: 9 of his last 10 games at the milestone, and 8 games in a row at 2+.
 8. **3+ shooters:** 3+ legs with **3+ shots in each of his last 5 games**, 3+ in **65%+ of his last 10** and **80%+ of 4+ games vs the opponent**, and a DK price of **-110 or better**. Many nights this section is empty.
 9. **Fun bet:** one plus-money 3+ leg a day: the one **most likely to hit**, by his history (ties go to the better price). The player needs **3+ in 6 of his last 10** and **2+ in each of his last 3 games**, and DK must pay **+100 or better**. It only uses games already priced that day, so it costs no extra credits. Example: `history 57% vs DK 43%` means he's hit 3+ about 57% of the time, and DK's +130 implies 43%.
@@ -58,6 +58,8 @@ SOG check · Thu Oct 8
 ```
 
 Last names are fine unless two players share one. A check uses no odds credits, and it doesn't change the day's list or log.
+
+**Check your settings:** type `settings` in the **check** box when you run the workflow. You get a message listing every setting the bot is using, with `*` next to the ones set in your Variables tab.
 
 ## DraftKings prices and credits
 - Prices come from DK's milestone market only, and only for games with a shortlisted player. That's 1 credit per game, about 2–5 credits a day.

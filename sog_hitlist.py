@@ -613,7 +613,8 @@ def select(rs, day, now, state, spend=True):
     abbrevs, matchups = rs["abbrevs"], rs["matchups"]
     # Shortlist before pricing, so credits only go to games that matter.
     anchors = [dict(c, k=anchor_leg(c)) for c in cands if anchor_leg(c)]
-    anchors.sort(key=lambda c: (record(c, c["k"]), c["probs"][str(c["k"])]), reverse=True)
+    # Ranked by chance of hitting (the estimate behind the fair price); record breaks ties.
+    anchors.sort(key=lambda c: (c["probs"][str(c["k"])], record(c, c["k"])), reverse=True)
     plus_pool = []
     for c in cands:
         k = PLUS_K
@@ -953,6 +954,32 @@ def check_players(names, day, now, state):
 
 # ---------- main ----------
 
+SETTINGS = ["SEND_HOUR", "SEND_MINUTE", "FOLLOWUP_UNTIL", "ANCHORS", "ANCHOR_MAX_K", "RECENT_GAMES",
+            "RECENT_HIT", "STREAK", "VS_HIT", "VS_MIN_GAMES", "HOT_RECENT", "HOT_VS", "MIN_RATE",
+            "MAX_RATE", "TOP_FORWARDS", "TOP_D", "PP1_TOP_FORWARDS", "PP_UNITS", "REQUIRE_PP1",
+            "TIGHT_TEAMS", "LEAKY_TEAMS", "BLEND_GAMES", "TEAM_BLEND_GAMES", "MAX_JUICE", "PLUS_K",
+            "PLUS_LEGS", "PLUS_RECENT_HIT", "PLUS_VS_HIT", "PLUS_STREAK", "PLUS_MIN_PRICE", "PLUS_EDGE",
+            "FUN_K", "FUN_MIN_PRICE", "FUN_RECENT_HIT", "FUN_STREAK", "ODDS_MONTHLY_CAP", "ODDS_RESERVE"]
+PERCENTS = {"RECENT_HIT", "VS_HIT", "HOT_RECENT", "HOT_VS", "PLUS_RECENT_HIT", "PLUS_VS_HIT",
+            "PLUS_EDGE", "FUN_RECENT_HIT"}
+
+
+def settings_report():
+    """Every setting as the script sees it; * marks ones set in the Variables tab."""
+    lines = []
+    for name in SETTINGS:
+        val = globals().get(name)
+        if name in PERCENTS:
+            val = f"{val * 100:g}"
+        elif isinstance(val, float):
+            val = f"{val:g}"
+        lines.append(f"{'*' if os.getenv(name) else ' '} {name} = {val}")
+    lines.append("")
+    lines.append("* = set in your Variables tab; the rest are built-in defaults.")
+    lines.append(f"Odds API key: {'present' if ODDS_API_KEY else 'MISSING'}")
+    return "\n".join(lines)
+
+
 def credits_line(state, now):
     """'Credits: 452 left' (shared with the saves bot). Listing events is free and reports the balance."""
     if not ODDS_API_KEY:
@@ -970,6 +997,11 @@ def main():
     day = now.date()
     state = load_state()
     sent_today = state.get("last_sent") == day.isoformat()
+
+    if CHECK.strip().lower() == "settings":
+        send_push(f"SOG settings · {day.strftime('%a %b %-d')}", settings_report())
+        print("Sent settings.")
+        return
 
     if CHECK:
         title, body = check_players(CHECK, day, now, state)
