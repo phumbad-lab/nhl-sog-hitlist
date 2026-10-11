@@ -1,10 +1,12 @@
 name: SOG replies
 
 # Answers messages you text the bot (a player's last name, "settings" or "help").
-# cron-job.org triggers this every 2 minutes; the schedule below is only a backup.
+# cron-job.org triggers this every 2 minutes; the schedule below is only a backup,
+# limited to about 8 AM - midnight Eastern (times are UTC) so it doesn't run overnight.
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/10 12-23 * * *"
+    - cron: "*/10 0-3 * * *"
   workflow_dispatch:
 
 permissions:

@@ -66,7 +66,7 @@ Send your bot a player's last name in Telegram, e.g. `dorofeyev`, or several sep
 
 - Only messages from your own chat are answered; anyone else who finds the bot is ignored.
 - Replies never change the day's list or log, and use no odds credits.
-- It runs from the **SOG replies** workflow. cron-job.org starts it every 2 minutes, with GitHub's own schedule (every 10 minutes) as a backup.
+- It runs from the **SOG replies** workflow. cron-job.org starts it every 2 minutes, with GitHub's own schedule (every 10 minutes, 8 AM to midnight) as a backup.
 
 ## DraftKings prices and credits
 - Prices come from DK's milestone market only, and only for games with a shortlisted player. That's 1 credit per game, about 2–5 credits a day.
