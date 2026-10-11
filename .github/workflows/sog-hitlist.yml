@@ -2,8 +2,8 @@ name: SOG hit list
 
 on:
   schedule:
-    # Every 30 min, about 6 AM to 1 PM Eastern (times are UTC). The script sends the list once
-    # after SEND_HOUR, then at most one DK-prices follow-up; other runs exit in seconds.
+    # Backup schedule (UTC), about 6 AM to 1 PM Eastern. cron-job.org triggers the 7:05 run.
+    # The script sends one list a day (not before 7:05) plus at most one DK-prices follow-up.
     - cron: "*/30 10-17 * * *"
   workflow_dispatch:
     inputs:
@@ -38,31 +38,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-          TELEGRAM_SILENT: ${{ vars.TELEGRAM_SILENT }}
-          SEND_HOUR: ${{ vars.SEND_HOUR }}
-          SEND_MINUTE: ${{ vars.SEND_MINUTE }}
-          FOLLOWUP_UNTIL: ${{ vars.FOLLOWUP_UNTIL }}
-          LEAKY_TEAMS: ${{ vars.LEAKY_TEAMS }}
-          MIN_RATE: ${{ vars.MIN_RATE }}
-          MAX_RATE: ${{ vars.MAX_RATE }}
-          RECENT_HIT: ${{ vars.RECENT_HIT }}
-          VS_HIT: ${{ vars.VS_HIT }}
-          VS_MIN_GAMES: ${{ vars.VS_MIN_GAMES }}
-          PLUS_RECENT_HIT: ${{ vars.PLUS_RECENT_HIT }}
-          PLUS_VS_HIT: ${{ vars.PLUS_VS_HIT }}
-          MAX_JUICE: ${{ vars.MAX_JUICE }}
-          PLUS_EDGE: ${{ vars.PLUS_EDGE }}
-          ANCHORS: ${{ vars.ANCHORS }}
-          PLUS_LEGS: ${{ vars.PLUS_LEGS }}
-          ODDS_MONTHLY_CAP: ${{ vars.ODDS_MONTHLY_CAP }}
-          ODDS_RESERVE: ${{ vars.ODDS_RESERVE }}
-          BLEND_GAMES: ${{ vars.BLEND_GAMES }}
-          TOP_FORWARDS: ${{ vars.TOP_FORWARDS }}
-          TOP_D: ${{ vars.TOP_D }}
-          REQUIRE_PP1: ${{ vars.REQUIRE_PP1 }}
-          PP1_TOP_FORWARDS: ${{ vars.PP1_TOP_FORWARDS }}
-          HOT_RECENT: ${{ vars.HOT_RECENT }}
-          HOT_VS: ${{ vars.HOT_VS }}
+          ALL_VARS: ${{ toJSON(vars) }}   # every setting from the Variables tab
           FORCE: ${{ inputs.force }}
           CHECK: ${{ inputs.check }}
 
