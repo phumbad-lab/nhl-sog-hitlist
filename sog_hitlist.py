@@ -111,8 +111,21 @@ except (ValueError, AttributeError):
     pass
 
 
+SETTING_WARNINGS = []   # variables that couldn't be read; reported in messages instead of crashing
+
+
 def env_num(name, default, cast=int):
-    return cast(os.getenv(name, "") or default)
+    """Read a numeric setting, forgiving '1,500', '10%', '+100' and stray spaces.
+    A value that still isn't a number falls back to the default and is reported."""
+    raw = (os.getenv(name, "") or "").strip()
+    if not raw:
+        return cast(default)
+    cleaned = raw.replace(",", "").replace("%", "").replace("$", "").replace(" ", "").lstrip("+")
+    try:
+        return cast(float(cleaned)) if cast is int else cast(cleaned)
+    except ValueError:
+        SETTING_WARNINGS.append(f"{name} = '{raw}' isn't a number, so the default {default} is used")
+        return cast(default)
 
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
@@ -977,15 +990,19 @@ def settings_report():
     lines.append("")
     lines.append("* = set in your Variables tab; the rest are built-in defaults.")
     lines.append(f"Odds API key: {'present' if ODDS_API_KEY else 'MISSING'}")
+    if SETTING_WARNINGS:
+        lines += ["", "⚠️ Fix in the Variables tab:"] + [f"- {w}" for w in SETTING_WARNINGS]
     return "\n".join(lines)
 
 
 def credits_line(state, now):
-    """'Credits: 452 left' (shared with the saves bot). Listing events is free and reports the balance."""
+    """'Credits: 452 left' (shared with the saves bot). Listing events is free and reports the balance.
+    Also carries any unreadable-setting warnings."""
+    warn = ("⚠️ " + "; ".join(SETTING_WARNINGS) + "\n") if SETTING_WARNINGS else ""
     if not ODDS_API_KEY:
-        return ""
+        return warn.strip()
     _, left = odds_get(f"/sports/{SPORT}/events", {})
-    return f"Credits: {left} left" if left is not None else ""
+    return warn + (f"Credits: {left} left" if left is not None else "")
 
 
 def priced_count(state):
