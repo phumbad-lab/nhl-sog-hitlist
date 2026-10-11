@@ -32,11 +32,11 @@ Credits: 452 left
 ## How players are picked
 1. **Opponent:** every game is in play, whoever the opponent. Set `TIGHT_TEAMS` to skip shooters facing the N stingiest defenses (e.g. `5`).
 2. **Top-two lines:** only players in their team's **top 6 forwards or top 4 defensemen by ice time** are considered (lines 1–2 and pairs 1–2). A forward on the **first or second power-play unit** also counts if he's in the **top 9**. Ice time leans on this season and switches over after about 5 games.
-3. **Mid-tier shooters:** of those, it keeps skaters averaging **1.5 to 5 shots a game**. Stars are allowed; the -375 price limit drops their overpriced legs. Anyone who missed his team's last game (injury or scratch) is dropped.
+3. **Mid-tier shooters:** of those, it keeps skaters averaging **1.5 to 5 shots a game**. Stars are allowed; the -400 price limit drops their overpriced legs. Anyone who missed his team's last game (injury or scratch) is dropped.
 4. **Power play:** **PP1** is the team's top 5 skaters in power-play time with 1:00+ a game. Set `REQUIRE_PP1` to `true` to list only PP1 players.
 5. **Hot hand required:** he must have **2+ shots in each of his last 5 games** (a 0 last game rules him out), and **2+ in 8 of his last 10**.
 6. **Head-to-head:** **80%+ of his games vs tonight's opponent, with at least 4 of them** (4/4, 5/6, 6/7...). A 1/2 or 2/4 history doesn't count. **Hot-hand exception:** at **9/10 or better** recently, he only needs **50%+** vs the opponent (still in 4+ games).
-7. **Anchors (2+):** 2+ legs that clear all of the above, **ranked by chance of hitting** (#1 has the shortest fair price). Legs DK prices shorter than **-375** are dropped. The fair price blends his record with what a typical shooter at his rate does, since hot streaks cool off.
+7. **Anchors (2+):** 2+ legs that clear all of the above, **ranked by chance of hitting** (#1 has the shortest fair price). Legs DK prices shorter than **-400** are dropped. The fair price blends his record with what a typical shooter at his rate does, since hot streaks cool off.
    Each line reads e.g. `L10 9/10 (8 straight)`: 9 of his last 10 games at the milestone, and 8 games in a row at 2+.
 8. **3+ shooters:** 3+ legs with **3+ shots in each of his last 5 games**, 3+ in **65%+ of his last 10** and **80%+ of 4+ games vs the opponent**, and a DK price of **-110 or better**. Many nights this section is empty.
 9. **Fun bet:** one plus-money 3+ leg a day: the one **most likely to hit**, by his history (ties go to the better price). The player needs **3+ in 6 of his last 10** and **2+ in each of his last 3 games**, and DK must pay **+100 or better**. It only uses games already priced that day, so it costs no extra credits. Example: `history 57% vs DK 43%` means he's hit 3+ about 57% of the time, and DK's +130 implies 43%.
@@ -60,6 +60,13 @@ SOG check · Thu Oct 8
 Last names are fine unless two players share one. A check uses no odds credits, and it doesn't change the day's list or log.
 
 **Check your settings:** type `settings` in the **check** box when you run the workflow. You get a message listing every setting the bot is using, with `*` next to the ones set in your Variables tab.
+
+## Texting the bot
+Send your bot a player's last name in Telegram, e.g. `dorofeyev`, or several separated by commas: `kadri, raddysh`. Within about 1–3 minutes it replies with the same breakdown as **check**: whether he made today's list and, if not, which rule cut him. You can also text `settings` (every value the bot is using) or `help`.
+
+- Only messages from your own chat are answered; anyone else who finds the bot is ignored.
+- Replies never change the day's list or log, and use no odds credits.
+- It runs from the **SOG replies** workflow. cron-job.org starts it every 2 minutes, with GitHub's own schedule (every 10 minutes) as a backup.
 
 ## DraftKings prices and credits
 - Prices come from DK's milestone market only, and only for games with a shortlisted player. That's 1 credit per game, about 2–5 credits a day.
@@ -104,7 +111,7 @@ Add any of these as a repository variable and it takes effect on the next run. T
 | `FUN_K` / `FUN_MIN_PRICE` | Fun bet milestone and lowest DK price | `3` / `100` |
 | `FUN_RECENT_HIT` / `FUN_STREAK` | Fun bet form: % of last 10 at the milestone, and 2+ streak | `60` / `3` |
 | `ANCHOR_MAX_K` | Biggest milestone an anchor can be (3+ legs have their own section) | `2` |
-| `MAX_JUICE` | Drop anchors DK prices shorter than this | `-375` |
+| `MAX_JUICE` | Drop anchors DK prices shorter than this | `-400` |
 | `PLUS_EDGE` | Points a 3+ leg's estimate must beat DK's price by | `0` |
 | `ANCHORS` / `PLUS_LEGS` | How many of each to list | `6` / `3` |
 | `ODDS_MONTHLY_CAP` | Most odds credits per month | `75` |

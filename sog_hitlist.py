@@ -18,7 +18,7 @@ Each morning (default 7 AM Eastern):
      one call per game, about 2-5 credits a day, capped per month.
   5. Send one message:
        Anchors       2+/3+ legs he's hit in 80%+ of his last 20 games AND 85%+ of
-                     4+ games vs tonight's opponent, not priced past -375
+                     4+ games vs tonight's opponent, not priced past -400
        Plus-money    3+ legs at plus money he's hit in 65%+ of his last 20 and
                      80%+ of 4+ games vs tonight's opponent
        Ticket        3-4 anchors that add up to roughly +200 to +350
@@ -46,7 +46,7 @@ Environment variables:
   FUN_RECENT_HIT, FUN_STREAK  fun bet form: % of last 10 at the milestone (60) and 2+ streak (3)
   ANCHOR_MAX_K        biggest milestone an anchor can be (default 2; 3+ legs have their own section)
   PP_UNITS            1 = only PP1 forwards get the top-9 exception, 2 = PP1 or PP2 (default 2)
-  MAX_JUICE           skip anchors DK prices shorter than this (default -375)
+  MAX_JUICE           skip anchors DK prices shorter than this (default -400)
   PLUS_EDGE           points a 3+ leg's estimate must beat DK's price by (default 0)
   ANCHORS, PLUS_LEGS  how many of each to list (default 6, 3)
   ODDS_MONTHLY_CAP    most credits this bot spends per month (default 75)
@@ -148,7 +148,7 @@ HOT_RECENT = env_num("HOT_RECENT", 90, float) / 100   # hot hand: 18/20+ recentl
 HOT_VS = env_num("HOT_VS", 50, float) / 100           # ...only needs 50%+ vs the opponent
 PLUS_RECENT_HIT = env_num("PLUS_RECENT_HIT", 65, float) / 100
 PLUS_VS_HIT = env_num("PLUS_VS_HIT", 80, float) / 100
-MAX_JUICE = env_num("MAX_JUICE", -375)
+MAX_JUICE = env_num("MAX_JUICE", -400)
 PLUS_EDGE = env_num("PLUS_EDGE", 0, float) / 100
 PLUS_K = env_num("PLUS_K", 3)                  # the 3+ shots section
 FUN_K = env_num("FUN_K", 3)                    # fun bet milestone
@@ -875,7 +875,8 @@ def find_player(query, tables):
 
 def check_players(names, day, now, state):
     rs = state.get("today") if (state.get("today") or {}).get("date") == day.isoformat() else None
-    rs = rs or research(day, state)
+    if rs is None:   # today's list hasn't run yet: answer from the rules alone
+        rs = {"date": day.isoformat(), "abbrevs": team_abbrevs(), "ranking": [], "matchups": [], "cands": []}
     res = select(rs, day, now, state, spend=False)
     listed = {}
     for i, a in enumerate(res["anchors"], 1):
@@ -967,6 +968,60 @@ def check_players(names, day, now, state):
 
 # ---------- main ----------
 
+# ---------- text replies ----------
+
+OFFSET_FILE = os.path.join(HERE, "telegram_offset.txt")
+REPLY = os.getenv("REPLY", "").strip().lower() in ("1", "true", "yes")
+HELP_TEXT = ("Text me a player's last name (or several, separated by commas) and I'll say whether he "
+             "made today's list and, if not, which rule cut him.\n"
+             "Examples: dorofeyev · kadri, raddysh · settings")
+
+
+def telegram_api(method, params):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/{method}"
+    req = urllib.request.Request(url, data=urllib.parse.urlencode(params).encode("utf-8"))
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def answer_texts():
+    """Reply to new messages in your chat with the bot. Other chats are ignored."""
+    if not (TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID):
+        print("No Telegram keys.")
+        return
+    try:
+        offset = int(open(OFFSET_FILE).read().strip() or 0)
+    except (FileNotFoundError, ValueError):
+        offset = 0
+    updates = telegram_api("getUpdates", {"offset": offset, "timeout": 0}).get("result", [])
+    if not updates:
+        print("No new messages.")
+        return
+    now = datetime.now(timezone.utc).astimezone(LOCAL_TZ)
+    day = now.date()
+    state = load_state()          # read only: replies never change the day's list or log
+    for u in updates:
+        offset = max(offset, u["update_id"] + 1)
+        msg = u.get("message") or {}
+        if str((msg.get("chat") or {}).get("id")) != TELEGRAM_CHAT_ID:
+            continue
+        text = (msg.get("text") or "").strip()
+        words = re.sub(r"^/?(check|start)\b", "", text, flags=re.I).strip(" :,")
+        if not words or words.lower() in ("help", "/help", "start"):
+            send_push("SOG bot", HELP_TEXT, silent=False)
+        elif words.lower() == "settings":
+            send_push(f"SOG settings · {day.strftime('%a %b %-d')}", settings_report(), silent=False)
+        else:
+            try:
+                title, body = check_players(words, day, now, state)
+            except Exception as e:
+                title, body = "SOG check", f"Couldn't check '{words}' right now ({e}). Try again in a few minutes."
+            send_push(title, body, silent=False)
+        print(f"Answered: {text!r}")
+    with open(OFFSET_FILE, "w") as f:
+        f.write(f"{offset}\n")
+
+
 SETTINGS = ["SEND_HOUR", "SEND_MINUTE", "FOLLOWUP_UNTIL", "ANCHORS", "ANCHOR_MAX_K", "RECENT_GAMES",
             "RECENT_HIT", "STREAK", "VS_HIT", "VS_MIN_GAMES", "HOT_RECENT", "HOT_VS", "MIN_RATE",
             "MAX_RATE", "TOP_FORWARDS", "TOP_D", "PP1_TOP_FORWARDS", "PP_UNITS", "REQUIRE_PP1",
@@ -1014,6 +1069,10 @@ def main():
     day = now.date()
     state = load_state()
     sent_today = state.get("last_sent") == day.isoformat()
+
+    if REPLY:
+        answer_texts()
+        return
 
     if CHECK.strip().lower() == "settings":
         send_push(f"SOG settings · {day.strftime('%a %b %-d')}", settings_report())

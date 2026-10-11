@@ -50,5 +50,6 @@ jobs:
           git add hitlist.csv 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "Update hit list log"
+            git pull --rebase -q origin main
             git push
           fi
