@@ -153,6 +153,7 @@ HOT_VS = env_num("HOT_VS", 50, float) / 100           # ...only needs 50%+ vs th
 PLUS_RECENT_HIT = env_num("PLUS_RECENT_HIT", 65, float) / 100
 PLUS_VS_HIT = env_num("PLUS_VS_HIT", 80, float) / 100
 MAX_JUICE = env_num("MAX_JUICE", -400)
+REFRESH_MINUTES = env_num("REFRESH_MINUTES", 60)   # re-check a posted game for missing player lines this often
 PLUS_EDGE = env_num("PLUS_EDGE", 0, float) / 100
 PLUS_K = env_num("PLUS_K", 3)                  # the 3+ shots section
 FUN_K = env_num("FUN_K", 3)                    # fun bet milestone
@@ -503,7 +504,7 @@ def month_key(now):
     return now.strftime("%Y-%m")
 
 
-def dk_prices(games_wanted, day, now, state, abbrevs, spend=True):
+def dk_prices(games_wanted, day, now, state, abbrevs, spend=True, refresh=()):
     """{(team, opp): {"seen": iso, "lines": {player_key: {k: price}}}} for games DK has posted.
     Reuses today's saved prices; spends at most 1 credit per newly posted game."""
     store = state.setdefault("dk", {})
@@ -512,7 +513,8 @@ def dk_prices(games_wanted, day, now, state, abbrevs, spend=True):
         store["date"] = day.isoformat()
         store["games"] = {}
     have = store["games"]
-    todo = [g for g in games_wanted if "|".join(g) not in have]
+    # Re-fetch posted games in `refresh` too: DK often adds players to a game after posting it.
+    todo = [g for g in games_wanted if "|".join(g) not in have or g in refresh]
     if not todo or not ODDS_API_KEY or not spend:
         return have, None
     start = datetime.combine(day, datetime.min.time(), LOCAL_TZ)
@@ -553,7 +555,9 @@ def dk_prices(games_wanted, day, now, state, abbrevs, spend=True):
                     lines.setdefault(o.get("description") or "", {})[str(k)] = int(round(o["price"]))
         if lines:
             state["odds_used"][month_key(now)] = used + 1
-            have["|".join(g)] = {"seen": now.strftime("%H:%M"),
+            old = have.get("|".join(g)) or have.get("|".join(g[::-1])) or {}
+            have.pop("|".join(g[::-1]), None)
+            have["|".join(g)] = {"seen": old.get("seen") or now.strftime("%H:%M"), "fetched": iso_utc(now),
                                  "by_key": {name_key(n): v for n, v in lines.items()},
                                  "by_last": {}}
             by_last = {}
@@ -561,6 +565,14 @@ def dk_prices(games_wanted, day, now, state, abbrevs, spend=True):
                 by_last.setdefault(last_key(n), []).append(v)
             have["|".join(g)]["by_last"] = {k: v[0] for k, v in by_last.items() if len(v) == 1}
     return have, note
+
+
+def iso_utc(dt):
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def game_entry(have, g):
+    return have.get("|".join(g)) or have.get("|".join(g[::-1]))
 
 
 def dk_price(c, k, have):
@@ -645,6 +657,8 @@ def select(rs, day, now, state, spend=True):
     # players could still make the list (an overpriced star doesn't use up the slots).
     have, note, tried, unpriced = {}, None, set(), []
 
+    refreshed = set()
+
     def price_for(c):
         nonlocal have, note
         g = (c["team"], c["opp"])
@@ -653,6 +667,16 @@ def select(rs, day, now, state, spend=True):
             tried.add(key)
             have, note = dk_prices([g], day, now, state, abbrevs, spend)
         price, seen = dk_price(c, c["k"], have)
+        # Game posted but no line for him yet: re-check that game, at most once an hour.
+        entry = game_entry(have, g)
+        if price is None and entry and spend and note is None and key not in refreshed:
+            fetched = entry.get("fetched")
+            age = (now - datetime.strptime(fetched, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                   ) if fetched else timedelta(hours=24)
+            if age >= timedelta(minutes=REFRESH_MINUTES):
+                refreshed.add(key)
+                have, note = dk_prices([g], day, now, state, abbrevs, spend, refresh={g})
+                price, seen = dk_price(c, c["k"], have)
         if price is None and not any(frozenset(u) == key for u in unpriced):
             if "|".join(g) not in have and "|".join(g[::-1]) not in have:
                 unpriced.append(g)
@@ -695,7 +719,9 @@ def select(rs, day, now, state, spend=True):
         p = c["probs"][str(FUN_K)]
         if fun is None or (p, price) > (fun["p"], fun["price"]):
             fun = dict(leg, price=price, seen=seen, p=p)
-    return {"ranking": rs["ranking"], "matchups": matchups, "fun": fun,
+    missing = [a["name"] for a in final_anchors if a["price"] is None and a.get("game_posted")]
+    return {"ranking": rs["ranking"], "matchups": matchups, "fun": fun, "missing": missing,
+            "lined": sum(a["price"] is not None for a in final_anchors),
             "anchors": final_anchors, "plus": final_plus, "unpriced": unpriced,
             "note": note, "ticket": build_ticket(final_anchors)}
 
@@ -761,6 +787,10 @@ def format_list(day, res, followup=False):
                    f"vs {f['opp']} {f['k']}+ in {v_hits}/{f['v_n']} · {f.get('streak_txt', 0)} straight at 2+")
     elif res["anchors"]:
         out.append("\nFUN BET: none tonight")
+    if res.get("missing") and not followup and not res["note"]:
+        names = ", ".join(n.split()[-1] for n in res["missing"])
+        out.append(f"\nDK hasn't posted lines for {names} yet; prices follow when they're up "
+                   f"(by {FOLLOWUP_UNTIL % 12 or 12} {'PM' if FOLLOWUP_UNTIL >= 12 else 'AM'}).")
     if res["unpriced"] and not followup and not res["note"]:
         out.append(f"\nDK hasn't posted {len(res['unpriced'])} of these games yet; "
                    f"prices follow when they're up (by {FOLLOWUP_UNTIL % 12 or 12} {'PM' if FOLLOWUP_UNTIL >= 12 else 'AM'}).")
@@ -1135,16 +1165,18 @@ def main():
         if res["matchups"]:
             log_today(day, res)
         state["last_sent"] = day.isoformat()
-        waiting = bool(res["unpriced"]) and not res["note"] and bool(ODDS_API_KEY)
-        state["followup"] = {"base": priced_count(state)} if waiting else None
+        waiting = bool(res["unpriced"] or res.get("missing")) and not res["note"] and bool(ODDS_API_KEY)
+        state["followup"] = {"base": priced_count(state), "lined": res.get("lined", 0)} if waiting else None
         print("Sent morning list.")
     elif sent_today and state.get("followup") and now.hour < FOLLOWUP_UNTIL:
         # Checks on unposted games are free; send one update once prices arrive
         # (all of them, or whatever has posted by the last hour of the window).
         rs = state.get("today") if (state.get("today") or {}).get("date") == day.isoformat() else None
         res = select(rs or research(day, state), day, now, state)
-        gained = priced_count(state) > state["followup"]["base"]
-        if gained and (not res["unpriced"] or res["note"] or now.hour >= FOLLOWUP_UNTIL - 1):
+        gained = (priced_count(state) > state["followup"]["base"]
+                  or res.get("lined", 0) > state["followup"].get("lined", 0))
+        settled = not res["unpriced"] and not res.get("missing")
+        if gained and (settled or res["note"] or now.hour >= FOLLOWUP_UNTIL - 1):
             title, body = format_list(day, res, followup=True)
             line = credits_line(state, now)
             body += f"\n\n{line}" if line else ""
@@ -1153,7 +1185,7 @@ def main():
             state["followup"] = None
             print("Sent DK prices follow-up.")
         else:
-            print(f"Waiting on DK for {len(res['unpriced'])} game(s).")
+            print(f"Waiting on DK for {len(res['unpriced'])} game(s) and lines for {res.get('missing')}.")
     elif sent_today and state.get("followup"):
         state["followup"] = None
         print("Follow-up window closed.")
