@@ -129,6 +129,7 @@ The check message adds role details (TOI, F#/D#, PP1, last game, records at 2+ a
 - NHL time-on-ice reports early in the season can show odd game counts; role blending smooths that.
 - DK sometimes has no milestone line for a listed player → "no DK line".
 - GitHub notice: the `ubuntu-latest` runner moves to Ubuntu 26 from Oct 19, 2026. The script is plain Python 3 standard library, so it should be fine; glance at the first run after that date.
+- **Check said Ovechkin was on the list when he wasn't (Oct 11):** the check rebuilt today's list with *current* settings (`MAX_JUICE` had moved from -375 to -400 after the 7:05 send). Fixed: "on today's list" now comes from `hitlist.csv` (what was actually sent). If he'd qualify under the current settings, it says so separately.
 - Claude's sandbox can't reach `api.telegram.org` either (proxy 403), so it can't verify bot tokens directly. GitHub runs are the test.
 - Never paste bot tokens into files or commits. They belong only in GitHub Secrets. The Sol Shoty token was pasted into the chat on Oct 11; regenerating it (BotFather › /revoke) is optional.
 

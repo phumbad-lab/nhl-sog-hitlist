@@ -887,6 +887,15 @@ def check_players(names, day, now, state):
         listed[a["pid"]] = f"anchor #{i}: {a['k']}+ at {a['p']:.0%}" + (f", DK {fmt_price(a['price'])}" if a["price"] is not None else "")
     for p in res["plus"]:
         listed.setdefault(p["pid"], f"{PLUS_K}+ shooters: {p['k']}+ at DK {fmt_price(p['price'])}, hits {p['p']:.0%}")
+    # What was actually SENT today (from the log). Settings may have changed since, so the
+    # rebuilt list above can differ; the answer must reflect what the owner received.
+    sent_rows = [r for r in load_log() if r["date"] == day.isoformat()]
+    list_was_sent = state.get("last_sent") == day.isoformat() and bool(sent_rows)
+    sent = {}
+    for r in sent_rows:
+        label = {"anchor": "anchor", "plus": f"{PLUS_K}+ shooters", "fun": "fun bet"}.get(r["section"], r["section"])
+        price = f", DK {r['dk_odds']}" if r.get("dk_odds") else ""
+        sent.setdefault(r["player_id"], []).append(f"{label}: {r['leg']}+{price}")
     ranking = leaky_ranking(day, rs["abbrevs"])
     sa_rank = {ab: i for i, (ab, _, _) in enumerate(ranking, 1)}
     opp_of = {}
@@ -923,8 +932,17 @@ def check_players(names, day, now, state):
             facts += "\n   " + " · ".join(
                 f"{k}+: L{c['r_n']} {c['detail'][str(k)][0]}/{c['r_n']}, vs {opp} {c['detail'][str(k)][1]}/{c['v_n']}"
                 for k in (2, 3))
-        if pid in listed:
-            out.append(f"✅ {name} ({team}) on the list, {listed[pid]}\n   {facts}")
+        if list_was_sent:
+            if pid in sent:
+                out.append(f"✅ {name} ({team}) was on today's list ({'; '.join(sent[pid])})\n   {facts}")
+                continue
+            if pid in listed:
+                out.append(f"❌ {name} ({team}) wasn't on today's list. Settings changed after it was sent, "
+                           f"and under the current ones he'd qualify ({listed[pid]})\n   {facts}")
+                continue
+        elif pid in listed:
+            out.append(f"✅ {name} ({team}) qualifies under current settings, {listed[pid]} "
+                       f"(today's list hasn't been sent yet)\n   {facts}")
             continue
         top_n = TOP_FORWARDS if pos == "F" else TOP_D
         if pos == "F" and role.get("pp_unit"):
