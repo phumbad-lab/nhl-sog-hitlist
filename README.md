@@ -4,7 +4,7 @@ One Telegram message at 7:05 AM Eastern (five minutes after the saves alert) wit
 
 - **Anchors:** short-priced 2+/3+ legs to parlay
 - **3+ shooters:** 3+ legs at -110 or better, worth a straight bet
-- **Ticket:** 3–4 anchors that add up to roughly +200 to +350
+- **Record:** running win rate for anchors, fun bets and 3+ shooters
 
 ```
 SOG hit list · Thu Oct 8
@@ -18,7 +18,6 @@ ANCHORS
 FUN BET
 Mason McTavish (STL) 3+ vs CBJ · DK +130 · history 57% vs DK 43% · L10 7/10 · vs CBJ 3+ in 4/5 · 8 straight at 2+
 
-TICKET: Keller 2+, Ehlers 2+, Makar 2+ → DK ≈ +144 · hits 51% on history
 
 Yesterday:
 ✅ Clayton Keller 2+: 3
@@ -41,7 +40,7 @@ Credits: 452 left
    Each line reads e.g. `L10 9/10 (8 straight)`: 9 of his last 10 games at the milestone, and 8 games in a row at 2+.
 8. **3+ shooters:** 3+ legs with **3+ shots in each of his last 5 games**, 3+ in **65%+ of his last 10** and **80%+ of 4+ games vs the opponent**, and a DK price of **-110 or better**. Many nights this section is empty.
 9. **Fun bet:** one plus-money 3+ leg a day: the one **most likely to hit**, by his history (ties go to the better price). The player needs **3+ in 6 of his last 10** and **2+ in each of his last 3 games**, and DK must pay **+100 or better**. It only uses games already priced that day, so it costs no extra credits. Example: `history 57% vs DK 43%` means he's hit 3+ about 57% of the time, and DK's +130 implies 43%.
-10. **Ticket:** the anchors **most likely to hit**, stacked until the price reaches about +200, with at most 4 legs and at most 2 from one game.
+10. **Record:** every morning ends with a running win rate, e.g. `Anchors: 14/20, 70%` and `Fun bets: 2/2, 100%` (voids excluded). Set the Variable `RECORD_SINCE` (e.g. `2026-10-10`) to count from a date.
 
 **Reading a line:** `(f -475) · DK -275 ✓` means the fair price is -475 and DK is only asking -275; ✓ marks DK's price as better than fair (`DK not up` if DK hasn't posted yet). The fair price comes from his record (here 17/20 recently and 6/6 vs BOS, 23/26 combined) pulled slightly toward what a typical shooter at his rate does, since hot streaks cool off. That works out to about an 83% chance, worth -475.
 
