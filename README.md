@@ -49,14 +49,20 @@ Credits: 452 left
 **Early season:** shots allowed and shot rates are blended with last season until about 10 games in (`BLEND_GAMES`).
 
 ## Checking your own picks
-**Actions › SOG hit list › Run workflow**, type names in **check** (e.g. `Stutzle, Batherson`), and run. You get a message saying whether each player made today's list, and if not, which rule left him out:
+**Actions › SOG hit list › Run workflow**, type names in **check** (e.g. `Stutzle, Batherson`), and run. You get a message saying whether each player made today's list, then every rule on its own line: his number, the bar, and ✅ or ❌ (🔸 = additional-target price range, 🎲 = fun bet qualifies):
 
 ```
-SOG check · Thu Oct 8
-✅ Nick Schmaltz (UTA) on the list, anchor #5: 2+ at 79%, DK -210
-   2.4 shots/gm · 19:05 TOI F#3 PP1 · vs CHI (#2 in shots allowed) · 2+ 79% · 3+ 50% · 4+ 15%
-❌ Cutter Gauthier (ANA): 4.2 shots/gm is above the 5 cap (priced like a star)
-   4.2 shots/gm · 19:40 TOI F#1 PP1 · vs PHI (#3 in shots allowed) · 2+ 94% · 3+ 82% · 4+ 60%
+SOG check · Mon Oct 12
+❌ Matthew Tkachuk (FLA) vs BUF: not on today's list
+✅ Ice time: F#2 (19:40), PP1 · needs top 6 F (top 9 if on PP1/PP2)
+✅ Shots/game: 2.6 · needs 1.5 to 5
+✅ Played his team's last game
+✅ Last 20: 2+ in 16/20 · needs 16
+✅ Streak: 2+ in 2 straight (last game 4) · needs 1
+❌ Vs BUF: 2+ in 3/6 · needs 80% of 4+ games
+✅ DK 2+: -380 · anchor needs -400 or better
+📊 Chance: 2+ 79% (fair -384) · 3+ 49%
+➖ Fun bet 3+: 10/20 (needs 12) · DK -140 (needs +100 or better)
 ```
 
 Last names are fine unless two players share one. A check uses no odds credits, and it doesn't change the day's list or log.

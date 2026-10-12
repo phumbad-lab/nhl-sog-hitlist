@@ -111,7 +111,7 @@ Credits: 19,9xx left
 ```
 (Illustrative; the numbers come from the Oct 10 slate.)
 
-The check message adds role details (TOI, F#/D#, PP1, last game, records at 2+ and 3+) and the exact rule that cut him.
+The check message (Oct 12 redesign; the owner found the old one jumbled): a status line, then `checklist()` prints every rule on its own line with his number, the bar and ✅/❌: ice time + PP, shots/game, played last game, last 20, streak, vs opponent (with hot-hand note), DK 2+ price band (✅ anchor / 🔸 target / ❌ too short), 📊 chance at 2+ and 3+, and a fun bet 3+ line (🎲 if he'd qualify). All rules are shown, not just the first that failed.
 
 ## Credits
 
