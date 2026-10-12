@@ -758,8 +758,8 @@ def dec_to_american(dec):
 
 
 def format_list(day, res, followup=False):
-    title = (f"SOG hit list · DK prices update · {day.strftime('%a %b %-d')}" if followup
-             else f"SOG hit list · {day.strftime('%a %b %-d')}")
+    title = (f"SOG +2 Hit List · DK prices update · {day.strftime('%a %b %-d')}" if followup
+             else f"SOG +2 Hit List · {day.strftime('%a %b %-d')}")
     out = []
     if not res["matchups"]:
         return title, "None of tonight's games are against a leaky defense."
@@ -772,10 +772,12 @@ def format_list(day, res, followup=False):
             price = "no DK line" if a.get("game_posted") else "DK not up"
         else:
             price = f"DK {fmt_price(a['price'])}" + (" ✓" if a["p"] > implied(a["price"]) + 0.03 else "")
-        return (f"{prefix}{a['name']} ({a['team']}) {a['k']}+ vs {a['opp']} · (f {to_american(a['p'])}) · "
+        # The list is all 2+ legs (title says so), so the milestone isn't repeated per player.
+        leg = "" if a["k"] == 2 else f" {a['k']}+"
+        return (f"{prefix}{a['name']} ({a['team']}){leg} vs {a['opp']} · (f {to_american(a['p'])}) · "
                 f"{price} · L{a['r_n']} {r_hits}/{a['r_n']} "
                 f"({a.get('streak_txts', {}).get(str(a['k']), a.get('streak_txt', 0))} straight) · "
-                f"vs {a['opp']} {a['k']}+ in {v_hits}/{a['v_n']}")
+                f"vs {a['opp']} {v_hits}/{a['v_n']}")
 
     if res["anchors"]:
         out.append("ANCHORS")
@@ -876,7 +878,8 @@ def grade(day):
         mark = {"W": "✅", "L": "❌"}.get(r["result"], "void")
         tag = {"plus": f" ({PLUS_K}+ shooter)", "fun": " (fun bet)"}.get(r["section"], "")
         shots = r["actual_sog"] if r["actual_sog"] != "" else "-"
-        lines.append(f"{mark} {r['player']} {r['leg']}+{tag}: {shots}")
+        leg = "" if r["leg"] == "2" and not tag else f" {r['leg']}+"
+        lines.append(f"{mark} {r['player']}{leg}{tag}: {shots}")
     return "\n".join(lines)
 
 
