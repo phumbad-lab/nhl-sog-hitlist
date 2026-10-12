@@ -23,7 +23,9 @@ date,section,player,player_id,team,opponent,leg,hit_pct,fair_odds,dk_odds,dk_see
 2026-10-11,anchor,Jake DeBrusk,8478498,VAN,NYR,2,80,-394,,07:05,Y,1,L,
 2026-10-11,anchor,Logan Stankoven,8482702,CAR,PHI,2,75,-299,-195,07:05,Y,3,W,+0.51
 2026-10-11,fun,Bobby McMann,8482259,SEA,WSH,3,62,-165,+110,07:05,,4,W,+1.10
-2026-10-12,anchor,Matt Boldy,8481557,MIN,VGK,2,84,-520,,07:05,Y,,,
-2026-10-12,anchor,Kirill Kaprizov,8478864,MIN,VGK,2,81,-416,,07:05,Y,,,
 2026-10-12,anchor,Sam Reinhart,8477933,FLA,BUF,2,81,-415,-255,07:05,Y,,,
 2026-10-12,anchor,Matthew Tkachuk,8479314,FLA,BUF,2,79,-384,-380,07:05,Y,,,
+2026-10-12,target,Jack Eichel,8478403,VGK,MIN,2,91,-970,-525,07:05,,,,
+2026-10-12,target,Jack Hughes,8481559,NJD,OTT,2,90,-894,-550,07:05,,,,
+2026-10-12,target,Matt Boldy,8481557,MIN,VGK,2,84,-520,-550,07:05,,,,
+2026-10-12,target,Kirill Kaprizov,8478864,MIN,VGK,2,81,-416,-600,07:05,,,,
