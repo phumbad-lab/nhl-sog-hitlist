@@ -759,11 +759,8 @@ def format_list(day, res, followup=False):
         out.append(f"{f['name']} ({f['team']}) {f['k']}+ vs {f['opp']} · DK {fmt_price(f['price'])} · "
                    f"history {f['p']:.0%} vs DK {implied(f['price']):.0%} · L{f['r_n']} {r_hits}/{f['r_n']} · "
                    f"vs {f['opp']} {f['k']}+ in {v_hits}/{f['v_n']} · {f.get('streak_txt', 0)} straight at 2+")
-    t = res["ticket"]
-    if t:
-        names = ", ".join(f"{a['name'].split()[-1]} {a['k']}+" for a in t["legs"])
-        price = f"DK ≈ {dec_to_american(t['dec'])} · " if t["priced"] else ""
-        out.append(f"\nTICKET: {names} → {price}hits {t['prob']:.0%} on history")
+    elif res["anchors"]:
+        out.append("\nFUN BET: none tonight")
     if res["unpriced"] and not followup and not res["note"]:
         out.append(f"\nDK hasn't posted {len(res['unpriced'])} of these games yet; "
                    f"prices follow when they're up (by {FOLLOWUP_UNTIL % 12 or 12} {'PM' if FOLLOWUP_UNTIL >= 12 else 'AM'}).")
@@ -831,13 +828,25 @@ def grade(day):
         tag = {"plus": f" ({PLUS_K}+ shooter)", "fun": " (fun bet)"}.get(r["section"], "")
         shots = r["actual_sog"] if r["actual_sog"] != "" else "-"
         lines.append(f"{mark} {r['player']} {r['leg']}+{tag}: {shots}")
-    for d in sorted({r["date"] for r in graded}):
-        legs = [r for r in rows if r["date"] == d and r["in_ticket"] == "Y"]
-        if legs and all(r.get("result") for r in legs):
-            res = [r["result"] for r in legs if r["result"] != "VOID"]
-            if res:
-                lines.append("Ticket " + ("✅ hit" if all(x == "W" for x in res) else "❌ missed"))
-    return "\n".join(lines) + "\n" + season_line(load_log())
+    return "\n".join(lines)
+
+
+RECORD_SINCE = os.getenv("RECORD_SINCE", "").strip()   # e.g. 2026-10-10; empty = every graded leg
+
+
+def record_block(rows):
+    """Running win rate for each kind of recommendation (voids excluded)."""
+    out = []
+    for section, label in (("anchor", "Anchors"), ("fun", "Fun bets"), ("plus", f"{PLUS_K}+ shooters")):
+        done = [r for r in rows if r["section"] == section and r.get("result") in ("W", "L")
+                and (not RECORD_SINCE or r["date"] >= RECORD_SINCE)]
+        if not done and section == "plus":
+            continue
+        wins = sum(r["result"] == "W" for r in done)
+        out.append(f"{label}: {wins}/{len(done)}, {wins / len(done):.0%}" if done else f"{label}: no results yet")
+    title = "RECORD" + (f" (since {datetime.strptime(RECORD_SINCE, '%Y-%m-%d').strftime('%b %-d')})"
+                        if RECORD_SINCE else "")
+    return title + "\n" + "\n".join(out)
 
 
 def season_line(rows):
@@ -1051,7 +1060,8 @@ SETTINGS = ["SEND_HOUR", "SEND_MINUTE", "FOLLOWUP_UNTIL", "ANCHORS", "ANCHOR_MAX
             "MAX_RATE", "TOP_FORWARDS", "TOP_D", "PP1_TOP_FORWARDS", "PP_UNITS", "REQUIRE_PP1",
             "TIGHT_TEAMS", "LEAKY_TEAMS", "BLEND_GAMES", "TEAM_BLEND_GAMES", "MAX_JUICE", "PLUS_K",
             "PLUS_LEGS", "PLUS_RECENT_HIT", "PLUS_VS_HIT", "PLUS_STREAK", "PLUS_MIN_PRICE", "PLUS_EDGE",
-            "FUN_K", "FUN_MIN_PRICE", "FUN_RECENT_HIT", "FUN_STREAK", "ODDS_MONTHLY_CAP", "ODDS_RESERVE"]
+            "FUN_K", "FUN_MIN_PRICE", "FUN_RECENT_HIT", "FUN_STREAK", "ODDS_MONTHLY_CAP", "ODDS_RESERVE",
+            "RECORD_SINCE"]
 PERCENTS = {"RECENT_HIT", "VS_HIT", "HOT_RECENT", "HOT_VS", "PLUS_RECENT_HIT", "PLUS_VS_HIT",
             "PLUS_EDGE", "FUN_RECENT_HIT"}
 
@@ -1118,6 +1128,7 @@ def main():
         title, body = format_list(day, res)
         if results:
             body += "\n\n" + results
+        body += "\n\n" + record_block(load_log())
         line = credits_line(state, now)
         body += f"\n\n{line}" if line else ""
         send_push(title, body)

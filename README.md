@@ -23,8 +23,9 @@ TICKET: Keller 2+, Ehlers 2+, Makar 2+ → DK ≈ +144 · hits 51% on history
 Yesterday:
 ✅ Clayton Keller 2+: 3
 ❌ Cale Makar 2+: 1
-Ticket ❌ missed
-Season: anchors 14/17 · 3+ shooters 3-2 +1.4u · tickets 2/4
+RECORD
+Anchors: 14/20, 70%
+Fun bets: 2/2, 100%
 
 Credits: 452 left
 ```

@@ -76,15 +76,15 @@ For each of tonight's games, every skater on both rosters goes through these ste
    - **Ranked by chance of hitting**; top `ANCHORS` shown. ✓ means the estimate beats DK's implied chance by 3+ points.
 8. **3+ section** (replaced "plus-money shooters"): 3+ legs with **3+ in each of the last 5 games** (`PLUS_STREAK` 5), 3+ in 65%+ of recent games (`PLUS_RECENT_HIT`), 80%+ against the opponent in 4+ games (`PLUS_VS_HIT`), and DK price **-110 or better** (`PLUS_MIN_PRICE`). `PLUS_EDGE` is 0. Up to `PLUS_LEGS` 3. Usually empty, and that's accepted. Side effect: a strong 3+ priced at -150 appears nowhere.
 9. **Fun bet:** one plus-money (`FUN_MIN_PRICE` +100) 3+ leg (`FUN_K`) with 3+ in 60%+ of recent games (`FUN_RECENT_HIT`; 12/20 with the 20-game window) and 2+ in each of his last 3 games (`FUN_STREAK`). The pick is the **highest chance of hitting**, not the best value against the price (the owner: "I care about the win"). Ties go to the better price. Only uses games already priced that day, so it costs no extra credits.
-10. **Ticket:** the anchors most likely to hit, with DK-priced legs first, stacked until about +200 (decimal ≥ 3.0). Max 4 legs, max 2 per game. The target is hard-coded; making it a setting was offered but not built.
+10. **Ticket:** no longer shown (owner's call, Oct 12); the running record replaced it. It's still computed and logged (`in_ticket` column): the anchors most likely to hit, DK-priced first, stacked to about +200, max 4 legs, max 2 per game.
 
 **DK pricing:** market `player_shots_on_goal_alternate` (milestones; "Over 1.5" = 2+), bookmaker `draftkings` only. Games are priced one at a time in rank order until the list is full, so an overpriced star doesn't use up the slots. 1 credit per game with lines; unposted games are free. "DK not up" means the game isn't posted yet; "no DK line" means the game is posted but DK has no line for him.
 
-**Grading:** next morning, from player game logs: W/L, VOID if he didn't play. Units at the DK price. The Season line shows anchors W/total, 3+ shooters W-L and units, fun bets W-L and units, and tickets hit/total.
+**Grading:** next morning, from player game logs: W/L, VOID if he didn't play (units at the DK price are still logged). The morning message shows yesterday's legs, then a **RECORD** block every day: `Anchors: 14/20, 70%`, `Fun bets: 2/2, 100%`, plus `3+ shooters` once any are graded. Voids are excluded. It counts every graded leg; the Variable `RECORD_SINCE` (e.g. `2026-10-10`) starts it from a date instead. Note that Oct 8–9 legs were picked under early, very different rules (anchors since Oct 10: 7/9).
 
 ## Message format (owner-approved; keep it short)
 
-The owner trimmed it on Oct 8: no TOI or line info in the list, no "est %", fair price shown as `(f -xxx)`. Keep yesterday's results. Show empty sections as "none tonight". Credits line is just "Credits: N left".
+The owner trimmed it on Oct 8: no TOI or line info in the list, no "est %", fair price shown as `(f -xxx)`. Keep yesterday's results. Show empty sections as "none tonight" (3+ shooters and the fun bet). No ticket line (removed Oct 12); a running RECORD block instead. Credits line is just "Credits: N left".
 
 ```
 SOG hit list · Sat Oct 10
@@ -97,13 +97,15 @@ ANCHORS
 FUN BET
 Mason McTavish (STL) 3+ vs CBJ · DK +130 · history 57% vs DK 43% · L20 14/20 · vs CBJ 3+ in 4/5 · 8 straight at 2+
 
-TICKET: Schmaltz 2+, Reinhart 2+, McTavish 2+, Roslovic 2+ → DK ≈ +330 · hits 42% on history
-
 Yesterday:
 ✅ Nick Schmaltz 2+: 4
 ❌ Vasily Podkolzin 2+: 1
-Ticket ✅ hit
-Season: anchors 5/6 · fun bets 1-0 +1.3u · tickets 1/1
+✅ Mason McTavish 3+ (fun bet): 4
+
+RECORD
+Anchors: 14/20, 70%
+Fun bets: 2/2, 100%
+3+ shooters: 1/2, 50%
 
 Credits: 19,9xx left
 ```
