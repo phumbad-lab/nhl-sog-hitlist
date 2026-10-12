@@ -70,6 +70,7 @@ Environment variables:
 
 import csv
 import json
+import math
 import os
 import re
 import sys
@@ -934,6 +935,59 @@ def find_player(query, tables):
     return list(hits.values())
 
 
+def checklist(c, role, pos, team, opp, rate, have, sa_rank, n_teams):
+    """Every rule, one per line: his number, the bar, and ✅/❌. Used by the player check."""
+    mark = lambda ok: "✅" if ok else "❌"
+    out = []
+    if TIGHT_TEAMS and sa_rank.get(opp, 0) > n_teams - TIGHT_TEAMS:
+        out.append(f"❌ Opponent: {opp} is a top-{TIGHT_TEAMS} tight defense")
+    if LEAKY_TEAMS < n_teams and sa_rank.get(opp, 99) > LEAKY_TEAMS:
+        out.append(f"❌ Opponent: {opp} isn't a top-{LEAKY_TEAMS} leaky defense")
+    pp = "PP1" if role.get("pp1") else "PP2" if role.get("pp_unit") else "no PP unit"
+    bar = (f"top {TOP_FORWARDS} F (top {PP1_TOP_FORWARDS} if on PP{'1' if PP_UNITS == 1 else '1/PP2'})"
+           if pos == "F" else f"top {TOP_D} D")
+    out.append(f"{mark(role['top'])} Ice time: {pos}#{role['rank']} ({fmt_toi(role['toi'])}), {pp} · needs {bar}")
+    if REQUIRE_PP1:
+        out.append(f"{mark(role.get('pp1'))} PP1 · required")
+    out.append(f"{mark(MIN_RATE <= rate <= MAX_RATE)} Shots/game: {rate:.1f} · needs {MIN_RATE:g} to {MAX_RATE:g}")
+    if not c:
+        out.append("❌ Not enough recent games to judge")
+        return out
+    if "missed" in c:
+        out.append(f"{mark(not c['missed'])} Played his team's last game")
+    r_n, v_n = c["r_n"], c["v_n"]
+    r2, v2 = c["detail"]["2"]
+    out.append(f"{mark(r2 / r_n >= RECENT_HIT)} Last {r_n}: 2+ in {r2}/{r_n} · needs {math.ceil(RECENT_HIT * r_n - 1e-9)}")
+    streak = c.get("streak", 0)
+    out.append(f"{mark(streak >= STREAK)} Streak: 2+ in {c.get('streak_txt', streak)} straight "
+               f"(last game {c.get('last_shots')}) · needs {STREAK}")
+    hot = r2 / r_n >= HOT_RECENT and HOT_VS < VS_HIT
+    vs_bar = HOT_VS if hot else VS_HIT
+    vs_ok = v_n >= VS_MIN_GAMES and v2 / v_n >= vs_bar
+    out.append(f"{mark(vs_ok)} Vs {opp}: 2+ in {v2}/{v_n} · needs {vs_bar:.0%} of {VS_MIN_GAMES}+ games"
+               + (f" (hot-hand bar; {HOT_RECENT:.0%}+ recently)" if hot else ""))
+    p2, p3 = c["probs"]["2"], c["probs"].get("3")
+    price, _ = dk_price(c, 2, have)
+    if price is None:
+        posted = f"{team}|{opp}" in have or f"{opp}|{team}" in have
+        out.append(f"➖ DK 2+: {'no line yet' if posted else 'game not posted yet'}")
+    elif price >= MAX_JUICE:
+        out.append(f"✅ DK 2+: {fmt_price(price)} · anchor needs {MAX_JUICE} or better")
+    elif price >= TARGET_MAX_JUICE:
+        out.append(f"🔸 DK 2+: {fmt_price(price)} · additional target ({MAX_JUICE} to {TARGET_MAX_JUICE})")
+    else:
+        out.append(f"❌ DK 2+: {fmt_price(price)} · shorter than {TARGET_MAX_JUICE}, not listed")
+    out.append(f"📊 Chance: 2+ {p2:.0%} (fair {to_american(p2)})" + (f" · 3+ {p3:.0%}" if p3 is not None else ""))
+    if str(FUN_K) in c["detail"]:
+        r3 = c["detail"][str(FUN_K)][0]
+        p_fun, _ = dk_price(c, FUN_K, have)
+        fun_ok = (r3 / r_n >= FUN_RECENT_HIT and streak >= FUN_STREAK
+                  and p_fun is not None and p_fun >= FUN_MIN_PRICE)
+        out.append(f"{'🎲' if fun_ok else '➖'} Fun bet {FUN_K}+: {r3}/{r_n} (needs {math.ceil(FUN_RECENT_HIT * r_n - 1e-9)}) · "
+                   f"DK {fmt_price(p_fun) if p_fun is not None else 'no line'} (needs {fmt_price(FUN_MIN_PRICE)} or better)")
+    return out
+
+
 def check_players(names, day, now, state):
     rs = state.get("today") if (state.get("today") or {}).get("date") == day.isoformat() else None
     if rs is None:   # today's list hasn't run yet: answer from the rules alone
@@ -986,72 +1040,22 @@ def check_players(names, day, now, state):
         role = team_roles(players, ctx["toi_cur"], ctx["toi_last"])[pid]
         rate = shot_rate(pid, ctx["cur"], ctx["last"]) or 0
         c = cand_by_pid.get(pid) or evaluate(pid, name, pos, team, opp, rate, day, state)
-        facts = (f"{rate:.1f} shots/gm · {fmt_toi(role['toi'])} TOI {pos}#{role['rank']}"
-                 + (" PP1" if role["pp1"] else "") + f" · vs {opp} (#{sa_rank.get(opp, '?')} in shots allowed)")
-        if c:
-            facts += f" · last game {c.get('last_shots')} SOG, {c.get('streak_txt', c.get('streak', 0))} straight at 2+"
-            facts += "\n   " + " · ".join(
-                f"{k}+: L{c['r_n']} {c['detail'][str(k)][0]}/{c['r_n']}, vs {opp} {c['detail'][str(k)][1]}/{c['v_n']}"
-                for k in (2, 3))
-        if list_was_sent:
-            if pid in sent:
-                out.append(f"✅ {name} ({team}) was on today's list ({'; '.join(sent[pid])})\n   {facts}")
-                continue
-            if pid in listed:
-                out.append(f"❌ {name} ({team}) wasn't on today's list. Settings changed after it was sent, "
-                           f"and under the current ones he'd qualify ({listed[pid]})\n   {facts}")
-                continue
-        elif pid in listed:
-            out.append(f"✅ {name} ({team}) qualifies under current settings, {listed[pid]} "
-                       f"(today's list hasn't been sent yet)\n   {facts}")
-            continue
-        top_n = TOP_FORWARDS if pos == "F" else TOP_D
-        if pos == "F" and role.get("pp_unit"):
-            top_n = PP1_TOP_FORWARDS
+        dk_have = state.get("dk", {}).get("games", {})
         n_teams = len(ranking)
-        if sa_rank.get(opp, 0) > n_teams - TIGHT_TEAMS:
-            why = f"{opp} is a top-{TIGHT_TEAMS} tight defense (#{n_teams - sa_rank[opp] + 1} fewest shots allowed)"
-        elif sa_rank.get(opp, 99) > LEAKY_TEAMS:
-            why = f"{opp} isn't a top-{LEAKY_TEAMS} leaky defense"
-        elif not role["top"]:
-            why = f"not top {top_n} {pos} on {team} in ice time"
-        elif REQUIRE_PP1 and not role["pp1"]:
-            why = "not on PP1"
-        elif not (MIN_RATE <= rate <= MAX_RATE):
-            why = (f"{rate:.1f} shots/gm is above the {MAX_RATE:g} cap (priced like a star)" if rate > MAX_RATE
-                   else f"{rate:.1f} shots/gm is under the {MIN_RATE:g} floor")
-        elif not c:
-            why = "not enough recent games to judge"
-        elif c.get("missed"):
-            why = "missed his team's last game"
-        elif not anchor_leg(c):
-            r2, v2 = c["detail"]["2"]
-            if c.get("streak", 0) < STREAK:
-                why = (f"2+ streak is {c.get('streak', 0)} game(s); needs {STREAK} "
-                       f"(last game: {c.get('last_shots')} SOG)")
-            elif r2 / c["r_n"] < min(RECENT_HIT, HOT_RECENT):
-                why = f"2+ in {r2}/{c['r_n']} of his last {c['r_n']}, under the {RECENT_HIT:.0%} bar"
-            elif c["v_n"] < VS_MIN_GAMES:
-                why = f"only {c['v_n']} game(s) vs {opp}; needs {VS_MIN_GAMES}+ to count"
-            elif v2 / c["v_n"] < VS_HIT and r2 / c["r_n"] >= HOT_RECENT:
-                why = f"2+ in {v2}/{c['v_n']} vs {opp}, under even the hot-hand {HOT_VS:.0%} bar"
-            elif v2 / c["v_n"] < VS_HIT:
-                why = (f"2+ in {v2}/{c['v_n']} vs {opp}, under the {VS_HIT:.0%} bar "
-                       f"(or {HOT_VS:.0%} with {HOT_RECENT:.0%}+ recently; he's {r2}/{c['r_n']})")
-            else:
-                why = f"2+ in {r2}/{c['r_n']} of his last {c['r_n']}, under the {RECENT_HIT:.0%} bar"
+        checks = checklist(c, role, pos, team, opp, rate, dk_have, sa_rank, n_teams)
+        head = f"{name} ({team}) vs {opp}"
+        if list_was_sent and pid in sent:
+            status = f"✅ {head}: on today's list ({'; '.join(sent[pid])})"
+        elif list_was_sent and pid in listed:
+            status = (f"❌ {head}: not on today's list. Settings changed after it was sent; "
+                      f"under the current ones he'd qualify ({listed[pid]})")
+        elif list_was_sent:
+            status = f"❌ {head}: not on today's list"
+        elif pid in listed:
+            status = f"✅ {head}: qualifies ({listed[pid]}); today's list hasn't been sent yet"
         else:
-            k = anchor_leg(c)
-            price, _ = dk_price(c, k, state.get("dk", {}).get("games", {}))
-            if price is not None and price < TARGET_MAX_JUICE:
-                why = f"DK {fmt_price(price)} on {k}+ is shorter than {TARGET_MAX_JUICE}, too pricey to list"
-            elif price is not None and price < MAX_JUICE:
-                why = f"DK {fmt_price(price)} on {k}+ is shorter than {MAX_JUICE}: an additional target, not an anchor"
-            elif ANCHORS:
-                why = f"qualified ({k}+ at {c['probs'][str(k)]:.0%}) but ranked below the top {ANCHORS}"
-            else:
-                why = f"qualified ({k}+ at {c['probs'][str(k)]:.0%}) but wasn't on the list when it was sent"
-        out.append(f"❌ {name} ({team}): {why}\n   {facts}")
+            status = f"❌ {head}: doesn't qualify (today's list hasn't been sent yet)"
+        out.append(status + "\n" + "\n".join(checks))
     return f"SOG check · {day.strftime('%a %b %-d')}", "\n".join(out)
 
 
