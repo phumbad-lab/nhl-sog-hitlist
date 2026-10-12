@@ -85,12 +85,12 @@ For each of tonight's games, every skater on both rosters goes through these ste
 
 ## Message format (owner-approved; keep it short)
 
-The owner trimmed it on Oct 8: no TOI or line info in the list, no "est %", fair price shown as `(f -xxx)`. Keep yesterday's results. Show an empty fun bet as "FUN BET: none tonight". No 3+ section (removed Oct 12). No ticket line (removed Oct 12); a running RECORD block instead. Credits line is just "Credits: N left".
+The owner trimmed it on Oct 8: no TOI or line info in the list, no "est %", fair price shown as `(f -xxx)`. Keep yesterday's results. Show an empty fun bet as "FUN BET: none tonight". No 3+ section (removed Oct 12). No ticket line (removed Oct 12); a running RECORD block instead. Credits line is just "Credits: N left". Title "SOG +2 Hit List" (Oct 12); anchor lines and Yesterday don't repeat "2+" per player, and head-to-head reads `vs BUF 5/6` (fun bet keeps "3+").
 
 ```
-SOG hit list · Sat Oct 10
+SOG +2 Hit List · Sat Oct 10
 ANCHORS
-1. Nick Schmaltz (UTA) 2+ vs BUF · (f -465) · DK -275 ✓ · L20 18/20 (5 straight) · vs BUF 2+ in 5/6
+1. Nick Schmaltz (UTA) vs BUF · (f -465) · DK -275 ✓ · L20 18/20 (5 straight) · vs BUF 5/6
 
 ADDITIONAL TARGETS
 Jack Eichel -550 · Martin Necas -450 · Bo Horvat no DK line
@@ -99,8 +99,8 @@ FUN BET
 Mason McTavish (STL) 3+ vs CBJ · DK +130 · history 57% vs DK 43% · L20 14/20 · vs CBJ 3+ in 4/5 · 8 straight at 2+
 
 Yesterday:
-✅ Nick Schmaltz 2+: 4
-❌ Vasily Podkolzin 2+: 1
+✅ Nick Schmaltz: 4
+❌ Vasily Podkolzin: 1
 ✅ Mason McTavish 3+ (fun bet): 4
 
 RECORD
