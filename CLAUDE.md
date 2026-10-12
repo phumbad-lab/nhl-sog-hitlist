@@ -75,17 +75,17 @@ For each of tonight's games, every skater on both rosters goes through these ste
    - Anchor = DK price `MAX_JUICE` (-400) or better. **Code default -400** since Oct 11 (was -375; Ovechkin at -390 prompted the change).
    - **Additional targets** (Oct 12, owner's design): qualifiers priced -401 to `TARGET_MAX_JUICE` (-600), or with no DK line / game not posted yet, shown on one line as names + price, ranked by chance of hitting. Shorter than -600 is hidden. Owner builds his own tickets and uses targets rarely; they're logged as section `target` and graded quietly, but **never shown in Yesterday or the RECORD** (record is anchors only, plus fun bets / 3+). Every qualifier's game is now priced (about 1 credit per game). Saturday Oct 10 replay: anchors 8/11, targets 6/6, no-line 2/3.
    - **Ranked by chance of hitting**; every anchor shown (`ANCHORS` 0 = no cap). ✓ means the estimate beats DK's implied chance by 3+ points.
-8. **3+ section** (replaced "plus-money shooters"): 3+ legs with **3+ in each of the last 5 games** (`PLUS_STREAK` 5), 3+ in 65%+ of recent games (`PLUS_RECENT_HIT`), 80%+ against the opponent in 4+ games (`PLUS_VS_HIT`), and DK price **-110 or better** (`PLUS_MIN_PRICE`). `PLUS_EDGE` is 0. Up to `PLUS_LEGS` 3. Usually empty, and that's accepted. Side effect: a strong 3+ priced at -150 appears nowhere.
+8. **3+ section: OFF since Oct 12** (owner's call; `PLUS_LEGS` default 0). It overlapped the fun bet and never fired under these rules (its only picks, Hertl W and Landeskog L on Oct 8, came from the older plus-money version). Not shown in the list or the RECORD; code kept, `PLUS_LEGS` 3 turns it back on. Its rules were: 3+ legs with **3+ in each of the last 5 games** (`PLUS_STREAK` 5), 3+ in 65%+ of recent games (`PLUS_RECENT_HIT`), 80%+ against the opponent in 4+ games (`PLUS_VS_HIT`), and DK price **-110 or better** (`PLUS_MIN_PRICE`). `PLUS_EDGE` is 0. Up to `PLUS_LEGS` 3. Usually empty, and that's accepted. Side effect: a strong 3+ priced at -150 appears nowhere.
 9. **Fun bet:** one plus-money (`FUN_MIN_PRICE` +100) 3+ leg (`FUN_K`) with 3+ in 60%+ of recent games (`FUN_RECENT_HIT`; 12/20 with the 20-game window) and 2+ in each of his last 3 games (`FUN_STREAK`). The pick is the **highest chance of hitting**, not the best value against the price (the owner: "I care about the win"). Ties go to the better price. Only uses games already priced that day, so it costs no extra credits.
 10. **Ticket:** no longer shown (owner's call, Oct 12); the running record replaced it. It's still computed and logged (`in_ticket` column): the anchors most likely to hit, DK-priced first, stacked to about +200, max 4 legs, max 2 per game.
 
 **DK pricing:** market `player_shots_on_goal_alternate` (milestones; "Over 1.5" = 2+), bookmaker `draftkings` only. Games are priced one at a time in rank order until the list is full, so an overpriced star doesn't use up the slots. 1 credit per game with lines; unposted games are free. "DK not up" means the game isn't posted yet; "no DK line" means the game is posted but DK has no line for him.
 
-**Grading:** next morning, from player game logs: W/L, VOID if he didn't play (units at the DK price are still logged). The morning message shows yesterday's legs, then a **RECORD** block every day: `Anchors: 14/20, 70%`, `Fun bets: 2/2, 100%`, plus `3+ shooters` once any are graded. Voids are excluded. It counts every graded leg; the Variable `RECORD_SINCE` (e.g. `2026-10-10`) starts it from a date instead. Note that Oct 8–9 legs were picked under early, very different rules (anchors since Oct 10: 7/9).
+**Grading:** next morning, from player game logs: W/L, VOID if he didn't play (units at the DK price are still logged). The morning message shows yesterday's legs, then a **RECORD** block every day: `Anchors: 14/20, 70%`, `Fun bets: 2/2, 100%`. (A `3+ shooters` line appears only if `PLUS_LEGS` is turned back on.) Voids are excluded. It counts every graded leg; the Variable `RECORD_SINCE` (e.g. `2026-10-10`) starts it from a date instead. Note that Oct 8–9 legs were picked under early, very different rules (anchors since Oct 10: 7/9).
 
 ## Message format (owner-approved; keep it short)
 
-The owner trimmed it on Oct 8: no TOI or line info in the list, no "est %", fair price shown as `(f -xxx)`. Keep yesterday's results. Show empty sections as "none tonight" (3+ shooters and the fun bet). No ticket line (removed Oct 12); a running RECORD block instead. Credits line is just "Credits: N left".
+The owner trimmed it on Oct 8: no TOI or line info in the list, no "est %", fair price shown as `(f -xxx)`. Keep yesterday's results. Show an empty fun bet as "FUN BET: none tonight". No 3+ section (removed Oct 12). No ticket line (removed Oct 12); a running RECORD block instead. Credits line is just "Credits: N left".
 
 ```
 SOG hit list · Sat Oct 10
@@ -94,8 +94,6 @@ ANCHORS
 
 ADDITIONAL TARGETS
 Jack Eichel -550 · Martin Necas -450 · Bo Horvat no DK line
-
-3+ SHOOTERS: none tonight
 
 FUN BET
 Mason McTavish (STL) 3+ vs CBJ · DK +130 · history 57% vs DK 43% · L20 14/20 · vs CBJ 3+ in 4/5 · 8 straight at 2+
@@ -108,7 +106,6 @@ Yesterday:
 RECORD
 Anchors: 14/20, 70%
 Fun bets: 2/2, 100%
-3+ shooters: 1/2, 50%
 
 Credits: 19,9xx left
 ```

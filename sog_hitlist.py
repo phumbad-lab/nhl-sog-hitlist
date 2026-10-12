@@ -49,7 +49,7 @@ Environment variables:
   MAX_JUICE           anchors must be priced this or longer at DK (default -400)
   TARGET_MAX_JUICE    shorter than MAX_JUICE down to this = "additional targets", names only (default -600)
   PLUS_EDGE           points a 3+ leg's estimate must beat DK's price by (default 0)
-  ANCHORS, PLUS_LEGS  how many of each to list (default 0 = every anchor, 3)
+  ANCHORS, PLUS_LEGS  how many of each to list (default 0 = every anchor; 0 = 3+ section off)
   ODDS_MONTHLY_CAP    most credits this bot spends per month (default 75)
   ODDS_RESERVE        never spend when the account is at or below this (default 200),
                       which protects the saves bot sharing the key
@@ -166,7 +166,7 @@ ANCHOR_MAX_K = env_num("ANCHOR_MAX_K", 2)      # anchors are 2+ legs; 3+ legs go
 PLUS_STREAK = env_num("PLUS_STREAK", 5)        # 3+ shots in each of his last N games
 PLUS_MIN_PRICE = env_num("PLUS_MIN_PRICE", -110)  # DK price must be -110 or better
 ANCHORS = env_num("ANCHORS", 0)               # 0 = list every anchor
-PLUS_LEGS = env_num("PLUS_LEGS", 3)
+PLUS_LEGS = env_num("PLUS_LEGS", 0)           # 0 = 3+ section off (Oct 12; the fun bet covers 3+)
 ODDS_MONTHLY_CAP = env_num("ODDS_MONTHLY_CAP", 75)
 ODDS_RESERVE = env_num("ODDS_RESERVE", 200)
 BLEND_GAMES = env_num("BLEND_GAMES", 10, float)            # player shot rates
@@ -792,7 +792,7 @@ def format_list(day, res, followup=False):
     if res["plus"]:
         out.append(f"\n{PLUS_K}+ SHOOTERS ({fmt_price(PLUS_MIN_PRICE)} or better)")
         out += [leg_line(p, "") for p in res["plus"]]
-    elif has_any:
+    elif has_any and PLUS_LEGS:
         out.append(f"\n{PLUS_K}+ SHOOTERS: none tonight")
     f = res.get("fun")
     if f:
@@ -885,7 +885,7 @@ RECORD_SINCE = os.getenv("RECORD_SINCE", "").strip()   # e.g. 2026-10-10; empty 
 def record_block(rows):
     """Running win rate for each kind of recommendation (voids excluded)."""
     out = []
-    for section, label in (("anchor", "Anchors"), ("fun", "Fun bets"), ("plus", f"{PLUS_K}+ shooters")):
+    for section, label in (("anchor", "Anchors"), ("fun", "Fun bets")) + ((("plus", f"{PLUS_K}+ shooters"),) if PLUS_LEGS else ()):
         done = [r for r in rows if r["section"] == section and r.get("result") in ("W", "L")
                 and (not RECORD_SINCE or r["date"] >= RECORD_SINCE)]
         if not done and section == "plus":

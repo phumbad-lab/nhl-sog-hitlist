@@ -4,8 +4,8 @@ One Telegram message at 7:05 AM Eastern (five minutes after the saves alert) wit
 
 - **Anchors:** every qualifying 2+ leg DK prices at -400 or better, ranked by chance of hitting, with stats
 - **Additional targets:** qualifiers priced -401 to -600 (or with no DK line yet), names and prices only, also ranked by chance of hitting
-- **3+ shooters:** 3+ legs at -110 or better, worth a straight bet
-- **Record:** running win rate for anchors, fun bets and 3+ shooters (additional targets aren't counted)
+- **Fun bet:** one plus-money 3+ leg, the likeliest to hit
+- **Record:** running win rate for anchors and fun bets (additional targets aren't counted)
 
 ```
 SOG hit list · Thu Oct 8
@@ -16,8 +16,6 @@ ANCHORS
 
 ADDITIONAL TARGETS
 Jack Eichel -550 · Martin Necas -450 · Bo Horvat no DK line
-
-3+ SHOOTERS: none tonight
 
 FUN BET
 Mason McTavish (STL) 3+ vs CBJ · DK +130 · history 57% vs DK 43% · L10 7/10 · vs CBJ 3+ in 4/5 · 8 straight at 2+
@@ -42,7 +40,7 @@ Credits: 452 left
 6. **Head-to-head:** **80%+ of his games vs tonight's opponent, with at least 4 of them** (4/4, 5/6, 6/7...). A 1/2 or 2/4 history doesn't count. **Hot-hand exception:** at **9/10 or better** recently, he only needs **50%+** vs the opponent (still in 4+ games).
 7. **Anchors (2+):** 2+ legs that clear all of the above, **ranked by chance of hitting** (#1 has the shortest fair price). Legs DK prices -401 to -600, or that DK hasn't priced yet, move to **Additional targets**; shorter than -600 isn't shown. Every anchor is listed unless `ANCHORS` sets a limit. The fair price blends his record with what a typical shooter at his rate does, since hot streaks cool off.
    Each line reads e.g. `L10 9/10 (8 straight)`: 9 of his last 10 games at the milestone, and 8 games in a row at 2+.
-8. **3+ shooters:** 3+ legs with **3+ shots in each of his last 5 games**, 3+ in **65%+ of his last 10** and **80%+ of 4+ games vs the opponent**, and a DK price of **-110 or better**. Many nights this section is empty.
+8. **3+ shooters (off since Oct 12; set `PLUS_LEGS` to turn it back on):** 3+ legs with **3+ shots in each of his last 5 games**, 3+ in **65%+ of his last 10** and **80%+ of 4+ games vs the opponent**, and a DK price of **-110 or better**. Many nights this section is empty.
 9. **Fun bet:** one plus-money 3+ leg a day: the one **most likely to hit**, by his history (ties go to the better price). The player needs **3+ in 6 of his last 10** and **2+ in each of his last 3 games**, and DK must pay **+100 or better**. It only uses games already priced that day, so it costs no extra credits. Example: `history 57% vs DK 43%` means he's hit 3+ about 57% of the time, and DK's +130 implies 43%.
 10. **Record:** every morning ends with a running win rate, e.g. `Anchors: 14/20, 70%` and `Fun bets: 2/2, 100%` (voids excluded). Set the Variable `RECORD_SINCE` (e.g. `2026-10-10`) to count from a date.
 
@@ -119,7 +117,7 @@ Add any of these as a repository variable and it takes effect on the next run. T
 | `MAX_JUICE` | Anchors must be priced this or better at DK | `-400` |
 | `TARGET_MAX_JUICE` | Shorter than `MAX_JUICE` down to this = additional targets | `-600` |
 | `PLUS_EDGE` | Points a 3+ leg's estimate must beat DK's price by | `0` |
-| `ANCHORS` / `PLUS_LEGS` | How many of each to list (`0` = every anchor) | `0` / `3` |
+| `ANCHORS` / `PLUS_LEGS` | How many of each to list (`0` = every anchor / 3+ section off) | `0` / `0` |
 | `ODDS_MONTHLY_CAP` | Most odds credits per month | `75` |
 | `ODDS_RESERVE` | Never spend at or below this many credits left | `200` |
 | `TOP_FORWARDS` / `TOP_D` | Ice-time rank cutoffs (lines 1–2, pairs 1–2) | `6` / `4` |
