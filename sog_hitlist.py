@@ -43,7 +43,7 @@ Environment variables:
   PLUS_STREAK         3+ section: 3+ shots in each of his last N games (default 5)
   PLUS_MIN_PRICE      3+ section: DK price must be this or better (default -110)
   FUN_K, FUN_MIN_PRICE  fun bet: milestone and lowest DK price (default 3+, +100)
-  FUN_RECENT_HIT, FUN_STREAK  fun bet form: % of last 10 at the milestone (60) and 2+ streak (3)
+  FUN_RECENT_HIT, FUN_STREAK  fun bet form: % of recent games at the milestone (60) and 2+ streak (1)
   ANCHOR_MAX_K        biggest milestone an anchor can be (default 2; 3+ legs have their own section)
   PP_UNITS            1 = only PP1 forwards get the top-9 exception, 2 = PP1 or PP2 (default 2)
   MAX_JUICE           anchors must be priced this or longer at DK (default -400)
@@ -161,7 +161,7 @@ PLUS_K = env_num("PLUS_K", 3)                  # the 3+ shots section
 FUN_K = env_num("FUN_K", 3)                    # fun bet milestone
 FUN_MIN_PRICE = env_num("FUN_MIN_PRICE", 100)  # fun bet must pay plus money
 FUN_RECENT_HIT = env_num("FUN_RECENT_HIT", 60, float) / 100   # 3+ in 6 of his last 10
-FUN_STREAK = env_num("FUN_STREAK", 3)          # and 2+ shots in each of his last 3 games
+FUN_STREAK = env_num("FUN_STREAK", 1)          # and 2+ shots last game (was 3 until Oct 12; backtest: streak length made no difference)
 ANCHOR_MAX_K = env_num("ANCHOR_MAX_K", 2)      # anchors are 2+ legs; 3+ legs go in their own section
 PLUS_STREAK = env_num("PLUS_STREAK", 5)        # 3+ shots in each of his last N games
 PLUS_MIN_PRICE = env_num("PLUS_MIN_PRICE", -110)  # DK price must be -110 or better

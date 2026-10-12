@@ -41,7 +41,7 @@ Credits: 452 left
 7. **Anchors (2+):** 2+ legs that clear all of the above, **ranked by chance of hitting** (#1 has the shortest fair price). Legs DK prices -401 to -600, or that DK hasn't priced yet, move to **Additional targets**; shorter than -600 isn't shown. Every anchor is listed unless `ANCHORS` sets a limit. The fair price blends his record with what a typical shooter at his rate does, since hot streaks cool off.
    Each line reads e.g. `L10 9/10 (8 straight)`: 9 of his last 10 games at the milestone, and 8 games in a row at 2+.
 8. **3+ shooters (off since Oct 12; set `PLUS_LEGS` to turn it back on):** 3+ legs with **3+ shots in each of his last 5 games**, 3+ in **65%+ of his last 10** and **80%+ of 4+ games vs the opponent**, and a DK price of **-110 or better**. Many nights this section is empty.
-9. **Fun bet:** one plus-money 3+ leg a day: the one **most likely to hit**, by his history (ties go to the better price). The player needs **3+ in 6 of his last 10** and **2+ in each of his last 3 games**, and DK must pay **+100 or better**. It only uses games already priced that day, so it costs no extra credits. Example: `history 57% vs DK 43%` means he's hit 3+ about 57% of the time, and DK's +130 implies 43%.
+9. **Fun bet:** one plus-money 3+ leg a day: the one **most likely to hit**, by his history (ties go to the better price). The player needs **3+ in 12 of his last 20** and **2+ in his last game**, and DK must pay **+100 or better**. It only uses games already priced that day, so it costs no extra credits. Example: `history 57% vs DK 43%` means he's hit 3+ about 57% of the time, and DK's +130 implies 43%.
 10. **Record:** every morning ends with a running win rate, e.g. `Anchors: 14/20, 70%` and `Fun bets: 2/2, 100%` (voids excluded). Set the Variable `RECORD_SINCE` (e.g. `2026-10-10`) to count from a date.
 
 **Reading a line:** `(f -475) · DK -275 ✓` means the fair price is -475 and DK is only asking -275; ✓ marks DK's price as better than fair (`DK not up` if DK hasn't posted yet). The fair price comes from his record (here 17/20 recently and 6/6 vs BOS, 23/26 combined) pulled slightly toward what a typical shooter at his rate does, since hot streaks cool off. That works out to about an 83% chance, worth -475.
@@ -112,7 +112,7 @@ Add any of these as a repository variable and it takes effect on the next run. T
 | `PLUS_MIN_PRICE` | 3+ section: DK price must be this or better | `-110` |
 | `PP_UNITS` | `1` = only PP1 forwards get the top-9 exception, `2` = PP1 or PP2 | `2` |
 | `FUN_K` / `FUN_MIN_PRICE` | Fun bet milestone and lowest DK price | `3` / `100` |
-| `FUN_RECENT_HIT` / `FUN_STREAK` | Fun bet form: % of last 10 at the milestone, and 2+ streak | `60` / `3` |
+| `FUN_RECENT_HIT` / `FUN_STREAK` | Fun bet form: % of recent games at the milestone, and 2+ streak | `60` / `1` |
 | `ANCHOR_MAX_K` | Biggest milestone an anchor can be (3+ legs have their own section) | `2` |
 | `MAX_JUICE` | Anchors must be priced this or better at DK | `-400` |
 | `TARGET_MAX_JUICE` | Shorter than `MAX_JUICE` down to this = additional targets | `-600` |
