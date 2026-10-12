@@ -9,13 +9,17 @@ Read this first. It's the one place to pick up where we left off. Update it when
 - Real bets are tracked in **Pikkit**, not here. `hitlist.csv` only records what the bot listed and how those legs did.
 - Companion project: **`phumbad-lab/nhl-saves-alerts`** (goalie saves alerts). It has its own CLAUDE.md and shares the Odds API key and the Telegram bot (see the hard rule below).
 
-## Hard rule: send only, never read the Telegram bot
+## Hard rule: never read the shared Telegram bot
 
-This app shares its Telegram bot (`TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`) with the saves app. **The saves app reads replies to the bot** (`getUpdates`, offset in its `state.json` as `tg_offset`) so the owner can log bets by replying "in" to an alert.
+Two bots are involved:
+- **Shared bot** (`TELEGRAM_BOT_TOKEN`): the saves app's bot. **The saves app reads replies to it** (`getUpdates`, offset in its `state.json` as `tg_offset`) so the owner can log bets by replying "in". This app may only *send* with it, and only as a fallback.
+- **Sol Shoty** (`SOG_BOT_TOKEN`, `t.me/Solshotey_bot`, created Oct 11): this app's own bot. The list is sent from it when the secret is set, and text replies read **only** from it.
 
-- This app must **only call `sendMessage`**. Never call `getUpdates`, set a webhook or read replies. Two readers steal each other's messages.
-- Verified Oct 11: the only Telegram call in `sog_hitlist.py` is `sendMessage` (`grep -n api.telegram.org sog_hitlist.py`).
-- A text-reply feature (text a last name, get the check) was built and pushed on Oct 11, then **removed the same day** because of this conflict. It never processed a message. **Any reply feature for this app needs its own new Telegram bot first.**
+Rules:
+- Never call `getUpdates`, set a webhook or read replies with `TELEGRAM_BOT_TOKEN`. Two readers steal each other's messages.
+- `telegram_api()` / `answer_texts()` use `SOG_BOT_TOKEN` only, and refuse to run without it (zero Telegram calls). Tested Oct 11 with recorded requests: the shared token is never used.
+- History: replies were first built on the shared bot (Oct 11), removed within the hour because of this conflict (they never processed a message), then restored the same evening on Sol Shoty.
+- `TELEGRAM_CHAT_ID` is the same for both bots (it's the owner's private chat ID).
 
 ## Working agreement (owner's preferences)
 
@@ -35,10 +39,11 @@ This app shares its Telegram bot (`TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`) wit
   - `force`: send today's list again even though it was already sent. **Don't force after games have started or finished**; it replaces the day's list and log, and tomorrow grades the replacement.
   - `check`: player names (e.g. `Stutzle, Batherson`) → message saying whether each made today's list and which rule cut him. `settings` → message listing every effective setting (`*` = set as a Variable) plus warnings about unreadable values. Neither changes the list, the log or credits.
   - Use **Run workflow**, not **Re-run jobs** (a re-run repeats the old run's inputs).
-- **Secrets:** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (same bot as saves), `ODDS_API_KEY` (shared with saves; replaced Oct 10 after the plan upgrade).
+- **Secrets:** `SOG_BOT_TOKEN` (Sol Shoty, this app's own bot; sends the list and handles replies), `TELEGRAM_BOT_TOKEN` (shared saves bot; send-only fallback, never read), `TELEGRAM_CHAT_ID` (owner's chat, same for both bots), `ODDS_API_KEY` (shared with saves; replaced Oct 10 after the plan upgrade).
+- **Text replies:** workflow `.github/workflows/sog-replies.yml` ("SOG replies") runs `sog_hitlist.py` with `REPLY=true`. It answers texts to Sol Shoty: last names (comma-separated), `settings`, `help`. Triggered by cron-job.org every 2 minutes (8 AM–11 PM) plus a GitHub schedule backup every 10 minutes (8 AM to midnight ET). It never changes `state.json` or `hitlist.csv`; it only commits `telegram_offset.txt`.
 - **Variables:** the workflow passes every repo Variable as JSON (`ALL_VARS: ${{ toJSON(vars) }}`), so new settings need no workflow edit. Numeric values are parsed leniently (`1,500`, `10%`, `+100`); a value that still isn't a number falls back to the default and shows a ⚠️ line in messages instead of crashing.
-- **Files the bot maintains, never edit or upload by hand:** `state.json` (caches, today's research, DK prices, credit usage, last_sent) and `hitlist.csv` (every listed leg and its grade). The workflow commits them with `git pull --rebase` first.
-- **Files people edit:** `sog_hitlist.py`, `README.md`, `.github/workflows/sog-hitlist.yml`, `CLAUDE.md`.
+- **Files the bot maintains, never edit or upload by hand:** `state.json` (caches, today's research, DK prices, credit usage, last_sent), `hitlist.csv` (every listed leg and its grade) and `telegram_offset.txt` (last Sol Shoty message answered). The workflow commits them with `git pull --rebase` first.
+- **Files people edit:** `sog_hitlist.py`, `README.md`, `.github/workflows/sog-hitlist.yml`, `.github/workflows/sog-replies.yml`, `CLAUDE.md`.
 - Data sources: NHL free APIs (`api.nhle.com/stats/rest/en/...` for skater/team summaries and time on ice; `api-web.nhle.com/v1/...` for rosters, schedule, game logs, box scores). Odds: The Odds API, DraftKings only.
 
 ## Current Variables (set in the repo, as of Oct 11)
@@ -124,7 +129,8 @@ The check message adds role details (TOI, F#/D#, PP1, last game, records at 2+ a
 - NHL time-on-ice reports early in the season can show odd game counts; role blending smooths that.
 - DK sometimes has no milestone line for a listed player → "no DK line".
 - GitHub notice: the `ubuntu-latest` runner moves to Ubuntu 26 from Oct 19, 2026. The script is plain Python 3 standard library, so it should be fine; glance at the first run after that date.
-- Replies feature removed (see the hard rule). **If a cron-job.org job pointing at `sog-replies.yml` still exists, delete it**; that workflow no longer exists, so it just errors.
+- Claude's sandbox can't reach `api.telegram.org` either (proxy 403), so it can't verify bot tokens directly. GitHub runs are the test.
+- Never paste bot tokens into files or commits. They belong only in GitHub Secrets. The Sol Shoty token was pasted into the chat on Oct 11; regenerating it (BotFather › /revoke) is optional.
 
 ## Decisions and rejected ideas
 
@@ -142,5 +148,6 @@ The check message adds role details (TOI, F#/D#, PP1, last game, records at 2+ a
   - How many credits are being used?
 - Possible: a full streak / record **backtest** run as a workflow, over all top-line shooters for a whole season. Offered, not built; the Oct 10 hand backtest used 15 players.
 - Possible: ticket target (+200) as a setting. Offered, not built.
-- Possible: text replies, **only with a separate Telegram bot**.
+- Check that Sol Shoty's first replies and first 7:05 list arrive after `SOG_BOT_TOKEN` is added.
+- Pending owner check: confirm the old cron-job.org replies job, if kept, points at `sog-replies.yml` with hours 8–23.
 - Results so far: Oct 10 anchors 5/6, ticket hit (about +330), fun bet McTavish 3+ +130 hit.

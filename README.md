@@ -61,6 +61,14 @@ Last names are fine unless two players share one. A check uses no odds credits, 
 
 **Check your settings:** type `settings` in the **check** box when you run the workflow. You get a message listing every setting the bot is using, with `*` next to the ones set in your Variables tab.
 
+## Texting the bot (Sol Shoty)
+The hit list has its **own Telegram bot**, Sol Shoty (`t.me/Solshotey_bot`), separate from the saves bot. Text it a player's last name, e.g. `dorofeyev`, or several separated by commas: `kadri, raddysh`. Within about 1–3 minutes it replies with the same breakdown as **check**: whether he made today's list and, if not, which rule cut him. You can also text `settings` or `help`.
+
+- Needs the secret **`SOG_BOT_TOKEN`** (Sol Shoty's token). Without it, replies stay off. Once it's set, the morning list is also sent from Sol Shoty.
+- Only messages from your own chat are answered. Replies never change the day's list or log, and use no odds credits.
+- It runs from the **SOG replies** workflow: cron-job.org every 2 minutes (8 AM–11 PM), with GitHub's own schedule (every 10 minutes, 8 AM to midnight) as a backup.
+- It only ever reads Sol Shoty. The saves bot is read only by the saves app (for your "in" replies).
+
 ## DraftKings prices and credits
 - Prices come from DK's milestone market only, and only for games with a shortlisted player. That's 1 credit per game, about 2–5 credits a day.
 - **Monthly cap: 75 credits** (`ODDS_MONTHLY_CAP`).

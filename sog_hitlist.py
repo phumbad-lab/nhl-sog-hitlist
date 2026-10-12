@@ -128,7 +128,11 @@ def env_num(name, default, cast=int):
         return cast(default)
 
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+# SOG_BOT_TOKEN is this app's own Telegram bot (Sol Shoty). TELEGRAM_BOT_TOKEN is the bot shared
+# with the saves app; it is only a fallback for SENDING. Replies are read ONLY from SOG_BOT_TOKEN,
+# because the saves app reads replies on the shared bot and two readers steal each other's messages.
+SOG_BOT_TOKEN = os.getenv("SOG_BOT_TOKEN", "").strip()
+TELEGRAM_BOT_TOKEN = SOG_BOT_TOKEN or os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 ODDS_API_KEY = os.getenv("ODDS_API_KEY", "").strip()
 SILENT = (os.getenv("TELEGRAM_SILENT", "") or "true").strip().lower() in ("1", "true", "yes")
@@ -227,7 +231,7 @@ def fmt_price(price):
     return "—" if price is None else (f"+{price}" if price > 0 else str(price))
 
 
-def send_push(title, message):
+def send_push(title, message, silent=None):
     text = f"{title}\n{message}"
     if not (TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID):
         print(f"[dry run, no Telegram keys]\n{text}\n")
@@ -236,7 +240,7 @@ def send_push(title, message):
         text = text[:4080] + "\n…(cut off)"
     payload = urllib.parse.urlencode({
         "chat_id": TELEGRAM_CHAT_ID, "text": text,
-        "disable_notification": "true" if SILENT else "false",
+        "disable_notification": "true" if (SILENT if silent is None else silent) else "false",
         "disable_web_page_preview": "true",
     }).encode("utf-8")
     req = urllib.request.Request(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", data=payload)
@@ -968,6 +972,62 @@ def check_players(names, day, now, state):
 
 # ---------- main ----------
 
+# ---------- text replies ----------
+
+OFFSET_FILE = os.path.join(HERE, "telegram_offset.txt")
+REPLY = os.getenv("REPLY", "").strip().lower() in ("1", "true", "yes")
+HELP_TEXT = ("Text me a player's last name (or several, separated by commas) and I'll say whether he "
+             "made today's list and, if not, which rule cut him.\n"
+             "Examples: dorofeyev · kadri, raddysh · settings")
+
+
+def telegram_api(method, params):
+    # Only ever this app's own bot: never the bot shared with the saves app.
+    url = f"https://api.telegram.org/bot{SOG_BOT_TOKEN}/{method}"
+    req = urllib.request.Request(url, data=urllib.parse.urlencode(params).encode("utf-8"))
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def answer_texts():
+    """Reply to new messages in your chat with the shots bot. Other chats are ignored.
+    Refuses to run without SOG_BOT_TOKEN, so it can never read the bot shared with the saves app."""
+    if not (SOG_BOT_TOKEN and TELEGRAM_CHAT_ID):
+        print("Replies are off: add the SOG_BOT_TOKEN secret (this app's own bot) to turn them on.")
+        return
+    try:
+        offset = int(open(OFFSET_FILE).read().strip() or 0)
+    except (FileNotFoundError, ValueError):
+        offset = 0
+    updates = telegram_api("getUpdates", {"offset": offset, "timeout": 0}).get("result", [])
+    if not updates:
+        print("No new messages.")
+        return
+    now = datetime.now(timezone.utc).astimezone(LOCAL_TZ)
+    day = now.date()
+    state = load_state()          # read only: replies never change the day's list or log
+    for u in updates:
+        offset = max(offset, u["update_id"] + 1)
+        msg = u.get("message") or {}
+        if str((msg.get("chat") or {}).get("id")) != TELEGRAM_CHAT_ID:
+            continue
+        text = (msg.get("text") or "").strip()
+        words = re.sub(r"^/?(check|start)\b", "", text, flags=re.I).strip(" :,")
+        if not words or words.lower() in ("help", "/help", "start"):
+            send_push("SOG bot", HELP_TEXT, silent=False)
+        elif words.lower() == "settings":
+            send_push(f"SOG settings · {day.strftime('%a %b %-d')}", settings_report(), silent=False)
+        else:
+            try:
+                title, body = check_players(words, day, now, state)
+            except Exception as e:
+                title, body = "SOG check", f"Couldn't check '{words}' right now ({e}). Try again in a few minutes."
+            send_push(title, body, silent=False)
+        print(f"Answered: {text!r}")
+    with open(OFFSET_FILE, "w") as f:
+        f.write(f"{offset}\n")
+
+
 SETTINGS = ["SEND_HOUR", "SEND_MINUTE", "FOLLOWUP_UNTIL", "ANCHORS", "ANCHOR_MAX_K", "RECENT_GAMES",
             "RECENT_HIT", "STREAK", "VS_HIT", "VS_MIN_GAMES", "HOT_RECENT", "HOT_VS", "MIN_RATE",
             "MAX_RATE", "TOP_FORWARDS", "TOP_D", "PP1_TOP_FORWARDS", "PP_UNITS", "REQUIRE_PP1",
@@ -1015,6 +1075,10 @@ def main():
     day = now.date()
     state = load_state()
     sent_today = state.get("last_sent") == day.isoformat()
+
+    if REPLY:
+        answer_texts()
+        return
 
     if CHECK.strip().lower() == "settings":
         send_push(f"SOG settings · {day.strftime('%a %b %-d')}", settings_report())

@@ -36,6 +36,7 @@ jobs:
         run: python3 sog_hitlist.py
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          SOG_BOT_TOKEN: ${{ secrets.SOG_BOT_TOKEN }}   # if set, the list is sent from the shots bot
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           ALL_VARS: ${{ toJSON(vars) }}   # every setting from the Variables tab
