@@ -50,7 +50,7 @@ Rules:
 
 | Variable | Value | Note |
 |---|---|---|
-| `ANCHORS` | 8 | show up to 8 anchors (default 6) |
+| `ANCHORS` | 8 | caps anchors at 8. Since Oct 12 the default is 0 (every anchor); owner asked to delete this Variable |
 | `ODDS_MONTHLY_CAP` | 1500 | raised for the 20k plan (default 75) |
 | `RECENT_GAMES` | 20 | last-20 window (default 10) |
 | `RECENT_HIT` | 80 | 16/20 (same as default) |
@@ -72,8 +72,9 @@ For each of tonight's games, every skater on both rosters goes through these ste
 6. **Head-to-head:** 2+ in at least `VS_HIT` (80%) of at least `VS_MIN_GAMES` (4) games against tonight's opponent, this season plus the last 3. **Hot-hand exception:** at `HOT_RECENT` 90%+ recently (18/20), head-to-head only needs `HOT_VS` 50%. Why: the owner rejected 1/2 and 2/4 histories (Schaefer, Palmieri); the exception came from McMann (19/20 recently, 2/4 vs DET).
 7. **Anchors (2+ only, `ANCHOR_MAX_K` 2):**
    - Estimated chance = (hits + prior × 15) / (games + 15). The prior is a negative binomial at his shot rate (`SHRINK_GAMES` 15, `DISPERSION` 0.25), so hot streaks are pulled toward normal. The fair price comes from that estimate.
-   - DK price shorter than `MAX_JUICE` is dropped. **Code default -400** since Oct 11 (was -375; Ovechkin at -390 prompted the change).
-   - **Ranked by chance of hitting**; top `ANCHORS` shown. ✓ means the estimate beats DK's implied chance by 3+ points.
+   - Anchor = DK price `MAX_JUICE` (-400) or better. **Code default -400** since Oct 11 (was -375; Ovechkin at -390 prompted the change).
+   - **Additional targets** (Oct 12, owner's design): qualifiers priced -401 to `TARGET_MAX_JUICE` (-600), or with no DK line / game not posted yet, shown on one line as names + price, ranked by chance of hitting. Shorter than -600 is hidden. Owner builds his own tickets and uses targets rarely; they're logged as section `target` and graded quietly, but **never shown in Yesterday or the RECORD** (record is anchors only, plus fun bets / 3+). Every qualifier's game is now priced (about 1 credit per game). Saturday Oct 10 replay: anchors 8/11, targets 6/6, no-line 2/3.
+   - **Ranked by chance of hitting**; every anchor shown (`ANCHORS` 0 = no cap). ✓ means the estimate beats DK's implied chance by 3+ points.
 8. **3+ section** (replaced "plus-money shooters"): 3+ legs with **3+ in each of the last 5 games** (`PLUS_STREAK` 5), 3+ in 65%+ of recent games (`PLUS_RECENT_HIT`), 80%+ against the opponent in 4+ games (`PLUS_VS_HIT`), and DK price **-110 or better** (`PLUS_MIN_PRICE`). `PLUS_EDGE` is 0. Up to `PLUS_LEGS` 3. Usually empty, and that's accepted. Side effect: a strong 3+ priced at -150 appears nowhere.
 9. **Fun bet:** one plus-money (`FUN_MIN_PRICE` +100) 3+ leg (`FUN_K`) with 3+ in 60%+ of recent games (`FUN_RECENT_HIT`; 12/20 with the 20-game window) and 2+ in each of his last 3 games (`FUN_STREAK`). The pick is the **highest chance of hitting**, not the best value against the price (the owner: "I care about the win"). Ties go to the better price. Only uses games already priced that day, so it costs no extra credits.
 10. **Ticket:** no longer shown (owner's call, Oct 12); the running record replaced it. It's still computed and logged (`in_ticket` column): the anchors most likely to hit, DK-priced first, stacked to about +200, max 4 legs, max 2 per game.
@@ -89,8 +90,10 @@ The owner trimmed it on Oct 8: no TOI or line info in the list, no "est %", fair
 ```
 SOG hit list · Sat Oct 10
 ANCHORS
-1. Bo Horvat (NYI) 2+ vs TBL · (f -476) · no DK line · L20 18/20 (8 straight) · vs TBL 2+ in 6/8
-2. Nick Schmaltz (UTA) 2+ vs BUF · (f -465) · DK -275 ✓ · L20 18/20 (5 straight) · vs BUF 2+ in 5/6
+1. Nick Schmaltz (UTA) 2+ vs BUF · (f -465) · DK -275 ✓ · L20 18/20 (5 straight) · vs BUF 2+ in 5/6
+
+ADDITIONAL TARGETS
+Jack Eichel -550 · Martin Necas -450 · Bo Horvat no DK line
 
 3+ SHOOTERS: none tonight
 

@@ -2,9 +2,10 @@
 
 One Telegram message at 7:05 AM Eastern (five minutes after the saves alert) with tonight's best shots-on-goal legs and DraftKings prices. It targets consistent middle-of-the-pack shooters, not the stars whose milestones are overpriced. It gives you:
 
-- **Anchors:** short-priced 2+/3+ legs to parlay
+- **Anchors:** every qualifying 2+ leg DK prices at -400 or better, ranked by chance of hitting, with stats
+- **Additional targets:** qualifiers priced -401 to -600 (or with no DK line yet), names and prices only, also ranked by chance of hitting
 - **3+ shooters:** 3+ legs at -110 or better, worth a straight bet
-- **Record:** running win rate for anchors, fun bets and 3+ shooters
+- **Record:** running win rate for anchors, fun bets and 3+ shooters (additional targets aren't counted)
 
 ```
 SOG hit list · Thu Oct 8
@@ -12,6 +13,9 @@ ANCHORS
 1. Clayton Keller (UTA) 2+ vs BOS · (f -475) · DK -275 ✓ · L20 17/20 · vs BOS 2+ in 6/6
 2. Cale Makar (COL) 2+ vs CGY · (f -413) · DK -360 · L20 17/20 · vs CGY 2+ in 7/8
 3. Nikolaj Ehlers (CAR) 2+ vs VAN · (f -330) · DK -250 ✓ · L20 16/20 · vs VAN 2+ in 7/8
+
+ADDITIONAL TARGETS
+Jack Eichel -550 · Martin Necas -450 · Bo Horvat no DK line
 
 3+ SHOOTERS: none tonight
 
@@ -36,7 +40,7 @@ Credits: 452 left
 4. **Power play:** **PP1** is the team's top 5 skaters in power-play time with 1:00+ a game. Set `REQUIRE_PP1` to `true` to list only PP1 players.
 5. **Hot hand required:** he must have **2+ shots in each of his last 5 games** (a 0 last game rules him out), and **2+ in 8 of his last 10**.
 6. **Head-to-head:** **80%+ of his games vs tonight's opponent, with at least 4 of them** (4/4, 5/6, 6/7...). A 1/2 or 2/4 history doesn't count. **Hot-hand exception:** at **9/10 or better** recently, he only needs **50%+** vs the opponent (still in 4+ games).
-7. **Anchors (2+):** 2+ legs that clear all of the above, **ranked by chance of hitting** (#1 has the shortest fair price). Legs DK prices shorter than **-400** are dropped. The fair price blends his record with what a typical shooter at his rate does, since hot streaks cool off.
+7. **Anchors (2+):** 2+ legs that clear all of the above, **ranked by chance of hitting** (#1 has the shortest fair price). Legs DK prices -401 to -600, or that DK hasn't priced yet, move to **Additional targets**; shorter than -600 isn't shown. Every anchor is listed unless `ANCHORS` sets a limit. The fair price blends his record with what a typical shooter at his rate does, since hot streaks cool off.
    Each line reads e.g. `L10 9/10 (8 straight)`: 9 of his last 10 games at the milestone, and 8 games in a row at 2+.
 8. **3+ shooters:** 3+ legs with **3+ shots in each of his last 5 games**, 3+ in **65%+ of his last 10** and **80%+ of 4+ games vs the opponent**, and a DK price of **-110 or better**. Many nights this section is empty.
 9. **Fun bet:** one plus-money 3+ leg a day: the one **most likely to hit**, by his history (ties go to the better price). The player needs **3+ in 6 of his last 10** and **2+ in each of his last 3 games**, and DK must pay **+100 or better**. It only uses games already priced that day, so it costs no extra credits. Example: `history 57% vs DK 43%` means he's hit 3+ about 57% of the time, and DK's +130 implies 43%.
@@ -112,9 +116,10 @@ Add any of these as a repository variable and it takes effect on the next run. T
 | `FUN_K` / `FUN_MIN_PRICE` | Fun bet milestone and lowest DK price | `3` / `100` |
 | `FUN_RECENT_HIT` / `FUN_STREAK` | Fun bet form: % of last 10 at the milestone, and 2+ streak | `60` / `3` |
 | `ANCHOR_MAX_K` | Biggest milestone an anchor can be (3+ legs have their own section) | `2` |
-| `MAX_JUICE` | Drop anchors DK prices shorter than this | `-400` |
+| `MAX_JUICE` | Anchors must be priced this or better at DK | `-400` |
+| `TARGET_MAX_JUICE` | Shorter than `MAX_JUICE` down to this = additional targets | `-600` |
 | `PLUS_EDGE` | Points a 3+ leg's estimate must beat DK's price by | `0` |
-| `ANCHORS` / `PLUS_LEGS` | How many of each to list | `6` / `3` |
+| `ANCHORS` / `PLUS_LEGS` | How many of each to list (`0` = every anchor) | `0` / `3` |
 | `ODDS_MONTHLY_CAP` | Most odds credits per month | `75` |
 | `ODDS_RESERVE` | Never spend at or below this many credits left | `200` |
 | `TOP_FORWARDS` / `TOP_D` | Ice-time rank cutoffs (lines 1–2, pairs 1–2) | `6` / `4` |
