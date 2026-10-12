@@ -65,6 +65,8 @@ SOG check · Mon Oct 12
 ➖ Fun bet 3+: 10/20 (needs 12) · DK -140 (needs +100 or better)
 ```
 
+**Who's most likely in one game:** text the bot a team and a number, e.g. `FLA 3`. It replies with the 6 players in that game most likely to get 3+ shots, with DK prices. No credits used.
+
 Last names are fine unless two players share one. A check uses no odds credits, and it doesn't change the day's list or log.
 
 **Check your settings:** type `settings` in the **check** box when you run the workflow. You get a message listing every setting the bot is using, with `*` next to the ones set in your Variables tab.

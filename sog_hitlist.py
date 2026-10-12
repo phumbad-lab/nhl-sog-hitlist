@@ -1067,7 +1067,9 @@ OFFSET_FILE = os.path.join(HERE, "telegram_offset.txt")
 REPLY = os.getenv("REPLY", "").strip().lower() in ("1", "true", "yes")
 HELP_TEXT = ("Text me a player's last name (or several, separated by commas) and I'll say whether he "
              "made today's list and, if not, which rule cut him.\n"
-             "Examples: dorofeyev · kadri, raddysh · settings")
+             "Text a team and a number for who's most likely to get that many shots in its game "
+             "today: FLA 3 · BUF 2\n"
+             "Examples: dorofeyev · kadri, raddysh · FLA 3 · settings")
 
 
 def telegram_api(method, params):
@@ -1076,6 +1078,41 @@ def telegram_api(method, params):
     req = urllib.request.Request(url, data=urllib.parse.urlencode(params).encode("utf-8"))
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))
+
+
+GAME_BOARD_SIZE = 6
+NHL_TEAMS = {"ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", "LAK",
+             "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
+             "TOR", "UTA", "VAN", "VGK", "WPG", "WSH"}
+GAME_RE = re.compile(r"^([A-Za-z]{3})\s*(\d)\+?$")
+
+
+def game_board(team, k, day, state):
+    """'FLA 3': everyone in FLA's game today, ranked by chance of k+ shots. Uses the
+    morning research and saved DK prices, so it costs no credits."""
+    rs = state.get("today") or {}
+    title = f"{team} {k}+ · {day.strftime('%a %b %-d')}"
+    if rs.get("date") != day.isoformat():
+        return title, "Today's research hasn't run yet. Try again after the 7:05 list."
+    cands = [c for c in rs["cands"] if team in (c["team"], c["opp"]) and not c.get("missed")]
+    if not cands:
+        playing = sorted({c["team"] for c in rs["cands"]})
+        return title, f"{team} doesn't play today (or none of its players pass the role and shot-rate filters)." + \
+            (f"\nPlaying today: {', '.join(playing)}" if playing else "")
+    if str(k) not in cands[0]["probs"]:
+        return title, f"I only track 2+ to {THRESHOLDS[-1]}+. Try e.g. {team} 3."
+    opp = cands[0]["opp"] if cands[0]["team"] == team else cands[0]["team"]
+    have = state.get("dk", {}).get("games", {})
+    cands.sort(key=lambda c: c["probs"][str(k)], reverse=True)
+    lines = [f"{team} vs {opp}: most likely to get {k}+ shots"]
+    for i, c in enumerate(cands[:GAME_BOARD_SIZE], 1):
+        price, _ = dk_price(c, k, have)
+        r_hits, v_hits = c["detail"][str(k)]
+        lines.append(f"{i}. {c['name']} ({c['team']}) {c['probs'][str(k)]:.0%} · "
+                     f"DK {fmt_price(price) if price is not None else 'no line'} · "
+                     f"L{c['r_n']} {r_hits}/{c['r_n']} · vs {c['opp']} {v_hits}/{c['v_n']}")
+    lines.append("\nTop-line players only (top 6 F, top 4 D, PP forwards; 1.5–5 shots a game).")
+    return title, "\n".join(lines)
 
 
 def answer_texts():
@@ -1106,6 +1143,10 @@ def answer_texts():
             send_push("SOG bot", HELP_TEXT, silent=False)
         elif words.lower() == "settings":
             send_push(f"SOG settings · {day.strftime('%a %b %-d')}", settings_report(), silent=False)
+        elif GAME_RE.match(words) and GAME_RE.match(words).group(1).upper() in NHL_TEAMS:
+            m_ = GAME_RE.match(words)
+            title, body = game_board(m_.group(1).upper(), int(m_.group(2)), day, state)
+            send_push(title, body, silent=False)
         else:
             try:
                 title, body = check_players(words, day, now, state)
