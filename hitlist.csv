@@ -92,4 +92,11 @@ date,section,player,player_id,team,opponent,leg,hit_pct,fair_odds,dk_odds,dk_see
 2026-10-20,target,David Pastrnak,8477956,BOS,DAL,2,84,-542,-550,07:05,,0,L,-1.00
 2026-10-20,target,Cutter Gauthier,8483445,ANA,NYI,2,84,-536,-575,07:05,,2,W,+0.17
 2026-10-20,target,Connor McDavid,8478402,EDM,MIN,2,83,-486,-450,07:05,,4,W,+0.22
-2026-10-21,target,Tage Thompson,8479420,BUF,PHI,2,84,-532,-600,07:05,,,,
+2026-10-21,target,Tage Thompson,8479420,BUF,PHI,2,84,-532,-600,07:05,,3,W,+0.17
+2026-10-22,anchor,Logan Stankoven,8482702,CAR,EDM,2,77,-342,-150,07:05,Y,,,
+2026-10-22,anchor,Jake Sanderson,8482105,OTT,SJS,2,73,-265,-215,07:05,Y,,,
+2026-10-22,target,Kyle Connor,8478398,WPG,DAL,2,90,-863,-475,07:05,,,,
+2026-10-22,target,Pavel Dorofeyev,8481604,NYR,TOR,2,88,-767,-525,07:05,,,,
+2026-10-22,target,Bo Horvat,8477500,NYI,LAK,2,86,-593,-475,07:05,,,,
+2026-10-22,target,Connor McDavid,8478402,EDM,CAR,2,82,-467,-450,07:05,,,,
+2026-10-22,target,Jason Robertson,8480027,DAL,WPG,2,82,-443,-500,07:05,,,,
