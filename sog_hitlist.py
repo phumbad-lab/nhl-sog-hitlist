@@ -42,8 +42,9 @@ Environment variables:
   PLUS_VS_HIT         3+ section: vs-opponent share, percent (default 80)
   PLUS_STREAK         3+ section: 3+ shots in each of his last N games (default 5)
   PLUS_MIN_PRICE      3+ section: DK price must be this or better (default -110)
-  FUN_K, FUN_MIN_PRICE  fun bet: milestone and lowest DK price (default 3+, +100)
-  FUN_RECENT_HIT, FUN_STREAK  fun bet form: % of recent games at the milestone (60) and 2+ streak (1)
+  FUN_K, FUN_MIN_CHANCE  3+ fun bet: milestone and lowest model chance (default 3+, 70%); any price
+  FUN_MIN_PRICE       optional lowest DK price for it (default none; +100 was the rule until Oct 24)
+  FUN_RECENT_HIT, FUN_STREAK  3+ fun bet form: % of recent games at the milestone (60) and 2+ streak (1)
   ANCHOR_MAX_K        biggest milestone an anchor can be (default 2; 3+ legs have their own section)
   PP_UNITS            1 = only PP1 forwards get the top-9 exception, 2 = PP1 or PP2 (default 2)
   MAX_JUICE           anchors must be priced this or longer at DK (default -400)
@@ -160,7 +161,12 @@ REFRESH_MINUTES = env_num("REFRESH_MINUTES", 60)   # re-check a posted game for 
 PLUS_EDGE = env_num("PLUS_EDGE", 0, float) / 100
 PLUS_K = env_num("PLUS_K", 3)                  # the 3+ shots section
 FUN_K = env_num("FUN_K", 3)                    # fun bet milestone
-FUN_MIN_PRICE = env_num("FUN_MIN_PRICE", 100)  # fun bet must pay plus money
+# Oct 24 (owner's call): the 3+ fun bet is the likeliest 3+ shooter at ANY price, only when the model
+# rates him 70%+. Through Oct 23, logged players rated 70-80% at 3+ hit 7/11; the night's single likeliest
+# 3+ shooter hit 7/12. It was plus money only (+100) before, 2/5.
+FUN_MIN_CHANCE = env_num("FUN_MIN_CHANCE", 70, float) / 100
+FUN_MIN_PRICE = env_num("FUN_MIN_PRICE", -100000)   # no price floor by default
+FUN_SINCE = "2026-10-24"   # the 3+ record starts over with the new rule
 FUN_RECENT_HIT = env_num("FUN_RECENT_HIT", 60, float) / 100   # 3+ in 6 of his last 10
 FUN_STREAK = env_num("FUN_STREAK", 1)          # and 2+ shots last game (was 3 until Oct 12; backtest: streak length made no difference)
 ANCHOR_MAX_K = env_num("ANCHOR_MAX_K", 2)      # anchors are 2+ legs; 3+ legs go in their own section
@@ -709,8 +715,8 @@ def select(rs, day, now, state, spend=True):
     if not have:
         have = state.get("dk", {}).get("games", {})
 
-    # Fun bet: the plus-money 3+ leg most likely to hit, among players in form.
-    # Uses games already priced today, so it costs no extra credits.
+    # 3+ fun bet: the 3+ leg most likely to hit, at any price, if the model rates it FUN_MIN_CHANCE+.
+    # Uses games already priced today, so it costs no extra credits (an unpriced game still counts).
     fun, taken = None, {c["pid"] for c in final_plus}
     for c in cands:
         if c["pid"] in taken or str(FUN_K) not in c["probs"]:
@@ -718,12 +724,15 @@ def select(rs, day, now, state, spend=True):
         r_hits, _ = c["detail"][str(FUN_K)]
         if r_hits / c["r_n"] < FUN_RECENT_HIT or streak_at(c, 2) < FUN_STREAK:
             continue
+        p = c["probs"][str(FUN_K)]
+        if round(p * 100) < round(FUN_MIN_CHANCE * 100):
+            continue
         leg = dict(c, k=FUN_K)
         price, seen = dk_price(leg, FUN_K, have)
-        if price is None or price < FUN_MIN_PRICE:
+        if price is not None and price < FUN_MIN_PRICE:
             continue
-        p = c["probs"][str(FUN_K)]
-        if fun is None or (p, price) > (fun["p"], fun["price"]):
+        rank = (p, price if price is not None else -100000)
+        if fun is None or rank > (fun["p"], fun["price"] if fun["price"] is not None else -100000):
             fun = dict(leg, price=price, seen=seen, p=p)
     missing = [a["name"] for a in targets if a["price"] is None and a.get("game_posted")]
     return {"ranking": rs["ranking"], "matchups": matchups, "fun": fun, "missing": missing,
@@ -802,11 +811,12 @@ def format_list(day, res, followup=False):
     if f:
         r_hits, v_hits = f["detail"][str(f["k"])]
         out.append(f"\n{f['k']}+ FUN BET")
-        out.append(f"{f['name']} ({f['team']}) {f['k']}+ vs {f['opp']} · DK {fmt_price(f['price'])} · "
-                   f"history {f['p']:.0%} vs DK {implied(f['price']):.0%} · L{f['r_n']} {r_hits}/{f['r_n']} · "
+        dk = (f"DK {fmt_price(f['price'])} · chance {f['p']:.0%} vs DK {implied(f['price']):.0%}"
+              if f["price"] is not None else f"no DK line yet · chance {f['p']:.0%}")
+        out.append(f"{f['name']} ({f['team']}) {f['k']}+ vs {f['opp']} · {dk} · L{f['r_n']} {r_hits}/{f['r_n']} · "
                    f"vs {f['opp']} {f['k']}+ in {v_hits}/{f['v_n']} · {f.get('streak_txt', 0)} straight at 2+")
     elif has_any:
-        out.append(f"\n{FUN_K}+ FUN BET: none tonight")
+        out.append(f"\n{FUN_K}+ FUN BET: none tonight (no one at {FUN_MIN_CHANCE:.0%}+)")
     if res.get("missing") and not followup and not res["note"]:
         names = ", ".join(n.split()[-1] for n in res["missing"])
         out.append(f"\nDK hasn't posted lines for {names} yet; prices follow when they're up "
@@ -905,7 +915,10 @@ def record_block(rows):
     out = []
     for section, label in (("anchor", "Anchors"), ("fun", f"{FUN_K}+ fun bets")) + ((("plus", f"{PLUS_K}+ shooters"),) if PLUS_LEGS else ()):
         done = [r for r in rows if kind(r) == section and r.get("result") in ("W", "L")
-                and (not RECORD_SINCE or r["date"] >= RECORD_SINCE)]
+                and (not RECORD_SINCE or r["date"] >= RECORD_SINCE)
+                and (section != "fun" or r["date"] >= FUN_SINCE)]
+        if section == "fun":
+            label += f" (since {datetime.strptime(FUN_SINCE, '%Y-%m-%d').strftime('%b %-d')})"
         if not done and section == "plus":
             continue
         wins = sum(r["result"] == "W" for r in done)
@@ -998,10 +1011,13 @@ def checklist(c, role, pos, team, opp, rate, have, sa_rank, n_teams):
     if str(FUN_K) in c["detail"]:
         r3 = c["detail"][str(FUN_K)][0]
         p_fun, _ = dk_price(c, FUN_K, have)
+        p_k = c["probs"].get(str(FUN_K), 0)
         fun_ok = (r3 / r_n >= FUN_RECENT_HIT and streak >= FUN_STREAK
-                  and p_fun is not None and p_fun >= FUN_MIN_PRICE)
-        out.append(f"{'🎲' if fun_ok else '➖'} {FUN_K}+ fun bet: {r3}/{r_n} (needs {math.ceil(FUN_RECENT_HIT * r_n - 1e-9)}) · "
-                   f"DK {fmt_price(p_fun) if p_fun is not None else 'no line'} (needs {fmt_price(FUN_MIN_PRICE)} or better)")
+                  and round(p_k * 100) >= round(FUN_MIN_CHANCE * 100)
+                  and (p_fun is None or p_fun >= FUN_MIN_PRICE))
+        out.append(f"{'🎲' if fun_ok else '➖'} {FUN_K}+ fun bet: chance {p_k:.0%} (needs {FUN_MIN_CHANCE:.0%}) · "
+                   f"L{r_n} {r3}/{r_n} · DK {fmt_price(p_fun) if p_fun is not None else 'no line'}"
+                   + (" · the night's likeliest gets it" if fun_ok else ""))
     return out
 
 
@@ -1180,10 +1196,10 @@ SETTINGS = ["SEND_HOUR", "SEND_MINUTE", "FOLLOWUP_UNTIL", "ANCHORS", "ANCHOR_MAX
             "MAX_RATE", "TOP_FORWARDS", "TOP_D", "PP1_TOP_FORWARDS", "PP_UNITS", "REQUIRE_PP1",
             "TIGHT_TEAMS", "LEAKY_TEAMS", "BLEND_GAMES", "TEAM_BLEND_GAMES", "MAX_JUICE", "TARGET_MAX_JUICE", "PLUS_K",
             "PLUS_LEGS", "PLUS_RECENT_HIT", "PLUS_VS_HIT", "PLUS_STREAK", "PLUS_MIN_PRICE", "PLUS_EDGE",
-            "FUN_K", "FUN_MIN_PRICE", "FUN_RECENT_HIT", "FUN_STREAK", "ODDS_MONTHLY_CAP", "ODDS_RESERVE",
+            "FUN_K", "FUN_MIN_CHANCE", "FUN_MIN_PRICE", "FUN_RECENT_HIT", "FUN_STREAK", "ODDS_MONTHLY_CAP", "ODDS_RESERVE",
             "RECORD_SINCE"]
 PERCENTS = {"RECENT_HIT", "VS_HIT", "HOT_RECENT", "HOT_VS", "PLUS_RECENT_HIT", "PLUS_VS_HIT",
-            "PLUS_EDGE", "FUN_RECENT_HIT"}
+            "PLUS_EDGE", "FUN_RECENT_HIT", "FUN_MIN_CHANCE"}
 
 
 def settings_report():
