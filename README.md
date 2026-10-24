@@ -4,8 +4,7 @@ One Telegram message at 7:05 AM Eastern (five minutes after the saves alert) wit
 
 - **Anchors:** 2+ legs DK prices -401 to -600 (or hasn't priced yet), ranked by chance of hitting, with stats. These have hit about 90% of the time.
 - **Fun bets:** 2+ legs at -400 or longer, names and prices only. They pay more and hit less (about 70%).
-- **3+ fun bet:** one plus-money 3+ leg, the likeliest to hit
-- **Record:** running win rate for anchors and 3+ fun bets
+- **Record:** running win rate for anchors
 
 ```
 SOG hit list · Thu Oct 8

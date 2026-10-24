@@ -88,7 +88,7 @@ For each of tonight's games, every skater on both rosters goes through these ste
 Owner's call after the Oct 23 review ("I want winning tickets"). Through Oct 23: legs priced -401 to -600 (then "additional targets") hit **36/40 (90%)**; legs at -400 or longer (then "anchors") hit **29/42 (69%)**. Our model added little on top of DK's price (✓ made no difference: 79% vs 78%).
 - **ANCHORS** (shown first, full stats, ranked by chance): DK -401 to `TARGET_MAX_JUICE` (-600), plus players with no DK line yet. Internally still `res["targets"]`; logged as section `anchor` from Oct 24.
 - **FUN BETS (-400 or longer)**: the old anchors, names + price only, ranked by chance. Internally `res["anchors"]`; logged as `fun2`; shown in Yesterday as "(fun)"; not in the RECORD.
-- **3+ FUN BET**: unchanged (renamed from "FUN BET").
+- **3+ FUN BET: OFF since Oct 24** (owner: "less noise"; `FUN_BET` default 0, set 1 to restore the plus-money version). Plus-money version went 2/5. The owner asked for a 3+ that hits 80-90%: none exists (no player rated 80%+ at 3+ on any night; best ~79%, DK -195 to -340). A "likeliest 3+ at 70%+, any price" version replayed Oct 10-22 at 6/11 and -$36 on $25 picks (needs ~70% at -230 to break even). Built on branch `preview/fun-3plus-70`, never merged (owner to delete).
 - **RECORD**: "Anchors" counts the -401 to -600 band across the whole history (pre-Oct 24 `target` rows count, pre-Oct 24 `anchor` rows don't); `kind()` / `SWAP_DATE` handle this. Plus "3+ fun bets".
 - Rejected the same night: a model-80% floor (`MIN_CHANCE`). The replay showed anchors that passed 80% hit 15/21 (71%) vs 14/21 (67%) for those it cut; the earlier "80%+ hit 89%" was mostly the targets. Built on branch `preview/min-chance-80`, never merged (owner to delete the branch).
 - Typical payouts the owner was shown: 4 legs at -400 ≈ +144, at -500 ≈ +107; 3 at -300 ≈ +137. Expect roughly even-money tickets from 2–4 anchors.
@@ -106,17 +106,13 @@ ANCHORS
 FUN BETS (-400 or longer)
 Nick Schmaltz -275 · Sam Reinhart -320
 
-3+ FUN BET
-Mason McTavish (STL) 3+ vs CBJ · DK +130 · history 57% vs DK 43% · L20 14/20 · vs CBJ 3+ in 4/5 · 8 straight at 2+
-
 Yesterday:
 ✅ Nick Schmaltz: 4
 ❌ Vasily Podkolzin: 1
-✅ Mason McTavish 3+ (fun bet): 4
+✅ Nick Schmaltz (fun): 4
 
 RECORD
 Anchors: 35/39, 90%
-3+ fun bets: 2/5, 40%
 
 Credits: 19,9xx left
 ```

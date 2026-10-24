@@ -159,6 +159,9 @@ TARGET_MAX_JUICE = env_num("TARGET_MAX_JUICE", -600)   # -401 to -600 (or no DK 
 REFRESH_MINUTES = env_num("REFRESH_MINUTES", 60)   # re-check a posted game for missing player lines this often
 PLUS_EDGE = env_num("PLUS_EDGE", 0, float) / 100
 PLUS_K = env_num("PLUS_K", 3)                  # the 3+ shots section
+# Oct 24: 3+ bet OFF (owner: "less noise"). Plus-money version went 2/5; a 70%+-any-price version
+# replayed 6/11 and lost money at ~-230. FUN_BET = 1 turns the plus-money version back on.
+FUN_BET = env_num("FUN_BET", 0)
 FUN_K = env_num("FUN_K", 3)                    # fun bet milestone
 FUN_MIN_PRICE = env_num("FUN_MIN_PRICE", 100)  # fun bet must pay plus money
 FUN_RECENT_HIT = env_num("FUN_RECENT_HIT", 60, float) / 100   # 3+ in 6 of his last 10
@@ -712,7 +715,7 @@ def select(rs, day, now, state, spend=True):
     # Fun bet: the plus-money 3+ leg most likely to hit, among players in form.
     # Uses games already priced today, so it costs no extra credits.
     fun, taken = None, {c["pid"] for c in final_plus}
-    for c in cands:
+    for c in (cands if FUN_BET else []):
         if c["pid"] in taken or str(FUN_K) not in c["probs"]:
             continue
         r_hits, _ = c["detail"][str(FUN_K)]
@@ -805,7 +808,7 @@ def format_list(day, res, followup=False):
         out.append(f"{f['name']} ({f['team']}) {f['k']}+ vs {f['opp']} · DK {fmt_price(f['price'])} · "
                    f"history {f['p']:.0%} vs DK {implied(f['price']):.0%} · L{f['r_n']} {r_hits}/{f['r_n']} · "
                    f"vs {f['opp']} {f['k']}+ in {v_hits}/{f['v_n']} · {f.get('streak_txt', 0)} straight at 2+")
-    elif has_any:
+    elif has_any and FUN_BET:
         out.append(f"\n{FUN_K}+ FUN BET: none tonight")
     if res.get("missing") and not followup and not res["note"]:
         names = ", ".join(n.split()[-1] for n in res["missing"])
@@ -903,7 +906,8 @@ def kind(r):
 def record_block(rows):
     """Running win rate for each kind of recommendation (voids excluded)."""
     out = []
-    for section, label in (("anchor", "Anchors"), ("fun", f"{FUN_K}+ fun bets")) + ((("plus", f"{PLUS_K}+ shooters"),) if PLUS_LEGS else ()):
+    for section, label in ((("anchor", "Anchors"),) + ((("fun", f"{FUN_K}+ fun bets"),) if FUN_BET else ())
+                           + ((("plus", f"{PLUS_K}+ shooters"),) if PLUS_LEGS else ())):
         done = [r for r in rows if kind(r) == section and r.get("result") in ("W", "L")
                 and (not RECORD_SINCE or r["date"] >= RECORD_SINCE)]
         if not done and section == "plus":
@@ -995,7 +999,7 @@ def checklist(c, role, pos, team, opp, rate, have, sa_rank, n_teams):
     else:
         out.append(f"❌ DK 2+: {fmt_price(price)} · shorter than {TARGET_MAX_JUICE}, not listed")
     out.append(f"📊 Chance: 2+ {p2:.0%} (fair {to_american(p2)})" + (f" · 3+ {p3:.0%}" if p3 is not None else ""))
-    if str(FUN_K) in c["detail"]:
+    if FUN_BET and str(FUN_K) in c["detail"]:
         r3 = c["detail"][str(FUN_K)][0]
         p_fun, _ = dk_price(c, FUN_K, have)
         fun_ok = (r3 / r_n >= FUN_RECENT_HIT and streak >= FUN_STREAK
@@ -1180,7 +1184,7 @@ SETTINGS = ["SEND_HOUR", "SEND_MINUTE", "FOLLOWUP_UNTIL", "ANCHORS", "ANCHOR_MAX
             "MAX_RATE", "TOP_FORWARDS", "TOP_D", "PP1_TOP_FORWARDS", "PP_UNITS", "REQUIRE_PP1",
             "TIGHT_TEAMS", "LEAKY_TEAMS", "BLEND_GAMES", "TEAM_BLEND_GAMES", "MAX_JUICE", "TARGET_MAX_JUICE", "PLUS_K",
             "PLUS_LEGS", "PLUS_RECENT_HIT", "PLUS_VS_HIT", "PLUS_STREAK", "PLUS_MIN_PRICE", "PLUS_EDGE",
-            "FUN_K", "FUN_MIN_PRICE", "FUN_RECENT_HIT", "FUN_STREAK", "ODDS_MONTHLY_CAP", "ODDS_RESERVE",
+            "FUN_BET", "FUN_K", "FUN_MIN_PRICE", "FUN_RECENT_HIT", "FUN_STREAK", "ODDS_MONTHLY_CAP", "ODDS_RESERVE",
             "RECORD_SINCE"]
 PERCENTS = {"RECENT_HIT", "VS_HIT", "HOT_RECENT", "HOT_VS", "PLUS_RECENT_HIT", "PLUS_VS_HIT",
             "PLUS_EDGE", "FUN_RECENT_HIT"}
