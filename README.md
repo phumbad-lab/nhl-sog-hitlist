@@ -2,10 +2,10 @@
 
 One Telegram message at 7:05 AM Eastern (five minutes after the saves alert) with tonight's best shots-on-goal legs and DraftKings prices. It targets consistent middle-of-the-pack shooters, not the stars whose milestones are overpriced. It gives you:
 
-- **Anchors:** every qualifying 2+ leg DK prices at -400 or better, ranked by chance of hitting, with stats
-- **Additional targets:** qualifiers priced -401 to -600 (or with no DK line yet), names and prices only, also ranked by chance of hitting
-- **Fun bet:** one plus-money 3+ leg, the likeliest to hit
-- **Record:** running win rate for anchors and fun bets (additional targets aren't counted)
+- **Anchors:** 2+ legs DK prices -401 to -600 (or hasn't priced yet), ranked by chance of hitting, with stats. These have hit about 90% of the time.
+- **Fun bets:** 2+ legs at -400 or longer, names and prices only. They pay more and hit less (about 70%).
+- **3+ fun bet:** one plus-money 3+ leg, the likeliest to hit
+- **Record:** running win rate for anchors and 3+ fun bets
 
 ```
 SOG hit list · Thu Oct 8

@@ -83,6 +83,16 @@ For each of tonight's games, every skater on both rosters goes through these ste
 
 **Grading:** next morning, from player game logs: W/L, VOID if he didn't play (units at the DK price are still logged). The morning message shows yesterday's legs, then a **RECORD** block every day: `Anchors: 14/20, 70%`, `Fun bets: 2/2, 100%`. (A `3+ shooters` line appears only if `PLUS_LEGS` is turned back on.) Voids are excluded. It counts every graded leg; the Variable `RECORD_SINCE` (e.g. `2026-10-10`) starts it from a date instead. Note that Oct 8–9 legs were picked under early, very different rules (anchors since Oct 10: 7/9).
 
+## Oct 24 swap: short-priced legs are the anchors now
+
+Owner's call after the Oct 23 review ("I want winning tickets"). Through Oct 23: legs priced -401 to -600 (then "additional targets") hit **36/40 (90%)**; legs at -400 or longer (then "anchors") hit **29/42 (69%)**. Our model added little on top of DK's price (✓ made no difference: 79% vs 78%).
+- **ANCHORS** (shown first, full stats, ranked by chance): DK -401 to `TARGET_MAX_JUICE` (-600), plus players with no DK line yet. Internally still `res["targets"]`; logged as section `anchor` from Oct 24.
+- **FUN BETS (-400 or longer)**: the old anchors, names + price only, ranked by chance. Internally `res["anchors"]`; logged as `fun2`; shown in Yesterday as "(fun)"; not in the RECORD.
+- **3+ FUN BET**: unchanged (renamed from "FUN BET").
+- **RECORD**: "Anchors" counts the -401 to -600 band across the whole history (pre-Oct 24 `target` rows count, pre-Oct 24 `anchor` rows don't); `kind()` / `SWAP_DATE` handle this. Plus "3+ fun bets".
+- Rejected the same night: a model-80% floor (`MIN_CHANCE`). The replay showed anchors that passed 80% hit 15/21 (71%) vs 14/21 (67%) for those it cut; the earlier "80%+ hit 89%" was mostly the targets. Built on branch `preview/min-chance-80`, never merged (owner to delete the branch).
+- Typical payouts the owner was shown: 4 legs at -400 ≈ +144, at -500 ≈ +107; 3 at -300 ≈ +137. Expect roughly even-money tickets from 2–4 anchors.
+
 ## Message format (owner-approved; keep it short)
 
 The owner trimmed it on Oct 8: no TOI or line info in the list, no "est %", fair price shown as `(f -xxx)`. Keep yesterday's results. Show an empty fun bet as "FUN BET: none tonight". No 3+ section (removed Oct 12). No ticket line (removed Oct 12); a running RECORD block instead. Credits line is just "Credits: N left". Title "SOG +2 Hit List" (Oct 12); anchor lines and Yesterday don't repeat "2+" per player, and head-to-head reads `vs BUF 5/6` (fun bet keeps "3+").
@@ -90,12 +100,13 @@ The owner trimmed it on Oct 8: no TOI or line info in the list, no "est %", fair
 ```
 SOG +2 Hit List · Sat Oct 10
 ANCHORS
-1. Nick Schmaltz (UTA) vs BUF · (f -465) · DK -275 ✓ · L20 18/20 (5 straight) · vs BUF 5/6
+1. Jack Eichel (VGK) vs MIN · (f -970) · DK -550 ✓ · L20 20/20 (20+ straight) · vs MIN 5/6
+2. Bo Horvat (NYI) vs TBL · (f -476) · no DK line · L20 18/20 (8 straight) · vs TBL 6/8
 
-ADDITIONAL TARGETS
-Jack Eichel -550 · Martin Necas -450 · Bo Horvat no DK line
+FUN BETS (-400 or longer)
+Nick Schmaltz -275 · Sam Reinhart -320
 
-FUN BET
+3+ FUN BET
 Mason McTavish (STL) 3+ vs CBJ · DK +130 · history 57% vs DK 43% · L20 14/20 · vs CBJ 3+ in 4/5 · 8 straight at 2+
 
 Yesterday:
@@ -104,8 +115,8 @@ Yesterday:
 ✅ Mason McTavish 3+ (fun bet): 4
 
 RECORD
-Anchors: 14/20, 70%
-Fun bets: 2/2, 100%
+Anchors: 35/39, 90%
+3+ fun bets: 2/5, 40%
 
 Credits: 19,9xx left
 ```

@@ -779,19 +779,20 @@ def format_list(day, res, followup=False):
                 f"({a.get('streak_txts', {}).get(str(a['k']), a.get('streak_txt', 0))} straight) · "
                 f"vs {a['opp']} {v_hits}/{a['v_n']}")
 
-    if res["anchors"]:
-        out.append("ANCHORS")
-        out += [leg_line(a, f"{i}. ") for i, a in enumerate(res["anchors"], 1)]
-    elif targets:
-        out.append(f"ANCHORS: none tonight at {MAX_JUICE} or better")
+    # Oct 24 swap (owner's call): the short-priced legs (-401 to -600, or no DK line yet) are the
+    # ANCHORS, with full stats; they hit 36/40 through Oct 23. The -400-or-longer legs, which hit
+    # 29/42, are listed as FUN BETS by name and price. Internally they're still res["targets"]
+    # (new anchors) and res["anchors"] (fun bets).
+    fun2 = res["anchors"]
     if targets:
-        def tag(t):
-            if t["price"] is not None:
-                return fmt_price(t["price"])
-            return "no DK line" if t.get("game_posted") else "DK not up"
-        out.append("\nADDITIONAL TARGETS")
-        out.append(" · ".join(f"{t['name']} {tag(t)}" for t in targets))
-    has_any = res["anchors"] or targets
+        out.append("ANCHORS")
+        out += [leg_line(a, f"{i}. ") for i, a in enumerate(targets, 1)]
+    elif fun2:
+        out.append(f"ANCHORS: none tonight ({MAX_JUICE - 1} to {TARGET_MAX_JUICE})")
+    if fun2:
+        out.append(f"\nFUN BETS ({MAX_JUICE} or longer)")
+        out.append(" · ".join(f"{a['name']} {fmt_price(a['price'])}" for a in fun2))
+    has_any = fun2 or targets
     if res["plus"]:
         out.append(f"\n{PLUS_K}+ SHOOTERS ({fmt_price(PLUS_MIN_PRICE)} or better)")
         out += [leg_line(p, "") for p in res["plus"]]
@@ -800,12 +801,12 @@ def format_list(day, res, followup=False):
     f = res.get("fun")
     if f:
         r_hits, v_hits = f["detail"][str(f["k"])]
-        out.append(f"\nFUN BET")
+        out.append(f"\n{f['k']}+ FUN BET")
         out.append(f"{f['name']} ({f['team']}) {f['k']}+ vs {f['opp']} · DK {fmt_price(f['price'])} · "
                    f"history {f['p']:.0%} vs DK {implied(f['price']):.0%} · L{f['r_n']} {r_hits}/{f['r_n']} · "
                    f"vs {f['opp']} {f['k']}+ in {v_hits}/{f['v_n']} · {f.get('streak_txt', 0)} straight at 2+")
     elif has_any:
-        out.append("\nFUN BET: none tonight")
+        out.append(f"\n{FUN_K}+ FUN BET: none tonight")
     if res.get("missing") and not followup and not res["note"]:
         names = ", ".join(n.split()[-1] for n in res["missing"])
         out.append(f"\nDK hasn't posted lines for {names} yet; prices follow when they're up "
@@ -824,7 +825,8 @@ def log_today(day, res):
     ticket = {a["pid"] for a in (res["ticket"] or {}).get("legs", [])}
     fun = [res["fun"]] if res.get("fun") else []
     # Targets are logged (graded quietly, for later reviews) but not shown in results or the record.
-    for section, legs in (("anchor", res["anchors"]), ("target", res.get("targets") or []),
+    # Since Oct 24 the -401 to -600 legs are the anchors and the -400-or-longer legs are "fun2".
+    for section, legs in (("anchor", res.get("targets") or []), ("fun2", res["anchors"]),
                           ("plus", res["plus"]), ("fun", fun)):
         for a in legs:
             rows.append({"date": day.isoformat(), "section": section, "player": a["name"],
@@ -832,7 +834,7 @@ def log_today(day, res):
                          "hit_pct": f"{a['p'] * 100:.0f}", "fair_odds": to_american(a["p"]),
                          "dk_odds": fmt_price(a["price"]) if a["price"] is not None else "",
                          "dk_seen_at": a.get("seen") or "",
-                         "in_ticket": "Y" if section == "anchor" and a["pid"] in ticket else ""})
+                         "in_ticket": "Y" if section == "fun2" and a["pid"] in ticket else ""})
     save_log(rows)
 
 
@@ -876,9 +878,9 @@ def grade(day):
     lines = ["Yesterday:"]
     for r in graded:
         mark = {"W": "✅", "L": "❌"}.get(r["result"], "void")
-        tag = {"plus": f" ({PLUS_K}+ shooter)", "fun": " (fun bet)"}.get(r["section"], "")
+        tag = {"plus": f" ({PLUS_K}+ shooter)", "fun": " (fun bet)", "fun2": " (fun)"}.get(r["section"], "")
         shots = r["actual_sog"] if r["actual_sog"] != "" else "-"
-        leg = "" if r["leg"] == "2" and not tag else f" {r['leg']}+"
+        leg = "" if r["leg"] == "2" and r["section"] != "fun" else f" {r['leg']}+"
         lines.append(f"{mark} {r['player']}{leg}{tag}: {shots}")
     return "\n".join(lines)
 
@@ -886,11 +888,23 @@ def grade(day):
 RECORD_SINCE = os.getenv("RECORD_SINCE", "").strip()   # e.g. 2026-10-10; empty = every graded leg
 
 
+SWAP_DATE = "2026-10-24"   # the -401 to -600 legs became the anchors (logged as "target" before this)
+
+
+def kind(r):
+    """What a logged leg counts as today: anchors = the -401 to -600 band (old "target" rows count)."""
+    if r["section"] == "target" and r["date"] < SWAP_DATE:
+        return "anchor"
+    if r["section"] == "anchor" and r["date"] < SWAP_DATE:
+        return "fun2"
+    return r["section"]
+
+
 def record_block(rows):
     """Running win rate for each kind of recommendation (voids excluded)."""
     out = []
-    for section, label in (("anchor", "Anchors"), ("fun", "Fun bets")) + ((("plus", f"{PLUS_K}+ shooters"),) if PLUS_LEGS else ()):
-        done = [r for r in rows if r["section"] == section and r.get("result") in ("W", "L")
+    for section, label in (("anchor", "Anchors"), ("fun", f"{FUN_K}+ fun bets")) + ((("plus", f"{PLUS_K}+ shooters"),) if PLUS_LEGS else ()):
+        done = [r for r in rows if kind(r) == section and r.get("result") in ("W", "L")
                 and (not RECORD_SINCE or r["date"] >= RECORD_SINCE)]
         if not done and section == "plus":
             continue
@@ -975,9 +989,9 @@ def checklist(c, role, pos, team, opp, rate, have, sa_rank, n_teams):
         posted = f"{team}|{opp}" in have or f"{opp}|{team}" in have
         out.append(f"➖ DK 2+: {'no line yet' if posted else 'game not posted yet'}")
     elif price >= MAX_JUICE:
-        out.append(f"✅ DK 2+: {fmt_price(price)} · anchor needs {MAX_JUICE} or better")
+        out.append(f"🎲 DK 2+: {fmt_price(price)} · fun-bet range ({MAX_JUICE} or longer)")
     elif price >= TARGET_MAX_JUICE:
-        out.append(f"🔸 DK 2+: {fmt_price(price)} · additional target ({MAX_JUICE} to {TARGET_MAX_JUICE})")
+        out.append(f"✅ DK 2+: {fmt_price(price)} · anchor range ({MAX_JUICE - 1} to {TARGET_MAX_JUICE})")
     else:
         out.append(f"❌ DK 2+: {fmt_price(price)} · shorter than {TARGET_MAX_JUICE}, not listed")
     out.append(f"📊 Chance: 2+ {p2:.0%} (fair {to_american(p2)})" + (f" · 3+ {p3:.0%}" if p3 is not None else ""))
@@ -986,7 +1000,7 @@ def checklist(c, role, pos, team, opp, rate, have, sa_rank, n_teams):
         p_fun, _ = dk_price(c, FUN_K, have)
         fun_ok = (r3 / r_n >= FUN_RECENT_HIT and streak >= FUN_STREAK
                   and p_fun is not None and p_fun >= FUN_MIN_PRICE)
-        out.append(f"{'🎲' if fun_ok else '➖'} Fun bet {FUN_K}+: {r3}/{r_n} (needs {math.ceil(FUN_RECENT_HIT * r_n - 1e-9)}) · "
+        out.append(f"{'🎲' if fun_ok else '➖'} {FUN_K}+ fun bet: {r3}/{r_n} (needs {math.ceil(FUN_RECENT_HIT * r_n - 1e-9)}) · "
                    f"DK {fmt_price(p_fun) if p_fun is not None else 'no line'} (needs {fmt_price(FUN_MIN_PRICE)} or better)")
     return out
 
@@ -997,11 +1011,11 @@ def check_players(names, day, now, state):
         rs = {"date": day.isoformat(), "abbrevs": team_abbrevs(), "ranking": [], "matchups": [], "cands": []}
     res = select(rs, day, now, state, spend=False)
     listed = {}
-    for i, a in enumerate(res["anchors"], 1):
-        listed[a["pid"]] = f"anchor #{i}: {a['k']}+ at {a['p']:.0%}" + (f", DK {fmt_price(a['price'])}" if a["price"] is not None else "")
-    for t in res.get("targets") or []:
-        listed.setdefault(t["pid"], f"additional target: {t['k']}+ at {t['p']:.0%}"
-                          + (f", DK {fmt_price(t['price'])}" if t["price"] is not None else ""))
+    for i, t in enumerate(res.get("targets") or [], 1):
+        listed[t["pid"]] = f"anchor #{i}: {t['k']}+ at {t['p']:.0%}" + (f", DK {fmt_price(t['price'])}" if t["price"] is not None else "")
+    for a in res["anchors"]:
+        listed.setdefault(a["pid"], f"fun bet: {a['k']}+ at {a['p']:.0%}"
+                          + (f", DK {fmt_price(a['price'])}" if a["price"] is not None else ""))
     for p in res["plus"]:
         listed.setdefault(p["pid"], f"{PLUS_K}+ shooters: {p['k']}+ at DK {fmt_price(p['price'])}, hits {p['p']:.0%}")
     # What was actually SENT today (from the log). Settings may have changed since, so the
@@ -1010,8 +1024,8 @@ def check_players(names, day, now, state):
     list_was_sent = state.get("last_sent") == day.isoformat() and bool(sent_rows)
     sent = {}
     for r in sent_rows:
-        label = {"anchor": "anchor", "target": "additional target", "plus": f"{PLUS_K}+ shooters",
-                 "fun": "fun bet"}.get(r["section"], r["section"])
+        label = {"anchor": "anchor", "target": "additional target", "fun2": "fun bet", "plus": f"{PLUS_K}+ shooters",
+                 "fun": f"{FUN_K}+ fun bet"}.get(r["section"], r["section"])
         price = f", DK {r['dk_odds']}" if r.get("dk_odds") else ""
         sent.setdefault(r["player_id"], []).append(f"{label}: {r['leg']}+{price}")
     ranking = leaky_ranking(day, rs["abbrevs"])
