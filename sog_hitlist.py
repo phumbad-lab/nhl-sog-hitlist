@@ -155,6 +155,14 @@ HOT_VS = env_num("HOT_VS", 50, float) / 100           # ...only needs 50%+ vs th
 PLUS_RECENT_HIT = env_num("PLUS_RECENT_HIT", 65, float) / 100
 PLUS_VS_HIT = env_num("PLUS_VS_HIT", 80, float) / 100
 MAX_JUICE = env_num("MAX_JUICE", -400)
+# Oct 24: only legs the model rates 80%+ are listed. Through Oct 23, 2+ legs under 80% hit 17/31 (55%)
+# vs 56/63 (89%) at 80%+. Legs under the bar are logged as "below" and graded quietly, not shown.
+MIN_CHANCE = env_num("MIN_CHANCE", 80, float) / 100
+
+
+def meets_chance(p):
+    """Compared at whole percents, as shown in messages (79.6% shows and counts as 80%)."""
+    return round(p * 100) >= round(MIN_CHANCE * 100)
 TARGET_MAX_JUICE = env_num("TARGET_MAX_JUICE", -600)   # -401 to -600 (or no DK line yet) = additional targets
 REFRESH_MINUTES = env_num("REFRESH_MINUTES", 60)   # re-check a posted game for missing player lines this often
 PLUS_EDGE = env_num("PLUS_EDGE", 0, float) / 100
@@ -647,6 +655,9 @@ def select(rs, day, now, state, spend=True):
     anchors = [dict(c, k=anchor_leg(c)) for c in cands if anchor_leg(c)]
     # Ranked by chance of hitting (the estimate behind the fair price); record breaks ties.
     anchors.sort(key=lambda c: (c["probs"][str(c["k"])], record(c, c["k"])), reverse=True)
+    below = [dict(c, price=None, seen=None, p=c["probs"][str(c["k"])])
+             for c in anchors if not meets_chance(c["probs"][str(c["k"])])]
+    anchors = [c for c in anchors if meets_chance(c["probs"][str(c["k"])])]
     plus_pool = []
     for c in cands:
         k = PLUS_K
@@ -728,7 +739,7 @@ def select(rs, day, now, state, spend=True):
     missing = [a["name"] for a in targets if a["price"] is None and a.get("game_posted")]
     return {"ranking": rs["ranking"], "matchups": matchups, "fun": fun, "missing": missing,
             "lined": sum(a["price"] is not None for a in final_anchors + targets),
-            "anchors": final_anchors, "targets": targets, "plus": final_plus, "unpriced": unpriced,
+            "anchors": final_anchors, "targets": targets, "below": below, "plus": final_plus, "unpriced": unpriced,
             "note": note, "ticket": build_ticket(final_anchors)}
 
 
@@ -825,6 +836,7 @@ def log_today(day, res):
     fun = [res["fun"]] if res.get("fun") else []
     # Targets are logged (graded quietly, for later reviews) but not shown in results or the record.
     for section, legs in (("anchor", res["anchors"]), ("target", res.get("targets") or []),
+                          ("below", res.get("below") or []),
                           ("plus", res["plus"]), ("fun", fun)):
         for a in legs:
             rows.append({"date": day.isoformat(), "section": section, "player": a["name"],
@@ -869,7 +881,7 @@ def grade(day):
         u = units(r)
         r["units"] = f"{u:+.2f}" if u is not None else ""
     save_log(rows)
-    graded = [r for r in pending if r.get("result") and r["section"] != "target"]
+    graded = [r for r in pending if r.get("result") and r["section"] not in ("target", "below")]
     if not graded:
         return None
 
@@ -980,7 +992,8 @@ def checklist(c, role, pos, team, opp, rate, have, sa_rank, n_teams):
         out.append(f"🔸 DK 2+: {fmt_price(price)} · additional target ({MAX_JUICE} to {TARGET_MAX_JUICE})")
     else:
         out.append(f"❌ DK 2+: {fmt_price(price)} · shorter than {TARGET_MAX_JUICE}, not listed")
-    out.append(f"📊 Chance: 2+ {p2:.0%} (fair {to_american(p2)})" + (f" · 3+ {p3:.0%}" if p3 is not None else ""))
+    out.append(f"{mark(meets_chance(p2))} Chance 2+: {p2:.0%} (fair {to_american(p2)}) · needs {MIN_CHANCE:.0%}"
+               + (f" · 3+ {p3:.0%}" if p3 is not None else ""))
     if str(FUN_K) in c["detail"]:
         r3 = c["detail"][str(FUN_K)][0]
         p_fun, _ = dk_price(c, FUN_K, have)
@@ -1006,7 +1019,7 @@ def check_players(names, day, now, state):
         listed.setdefault(p["pid"], f"{PLUS_K}+ shooters: {p['k']}+ at DK {fmt_price(p['price'])}, hits {p['p']:.0%}")
     # What was actually SENT today (from the log). Settings may have changed since, so the
     # rebuilt list above can differ; the answer must reflect what the owner received.
-    sent_rows = [r for r in load_log() if r["date"] == day.isoformat()]
+    sent_rows = [r for r in load_log() if r["date"] == day.isoformat() and r["section"] != "below"]
     list_was_sent = state.get("last_sent") == day.isoformat() and bool(sent_rows)
     sent = {}
     for r in sent_rows:
@@ -1164,11 +1177,11 @@ def answer_texts():
 SETTINGS = ["SEND_HOUR", "SEND_MINUTE", "FOLLOWUP_UNTIL", "ANCHORS", "ANCHOR_MAX_K", "RECENT_GAMES",
             "RECENT_HIT", "STREAK", "VS_HIT", "VS_MIN_GAMES", "HOT_RECENT", "HOT_VS", "MIN_RATE",
             "MAX_RATE", "TOP_FORWARDS", "TOP_D", "PP1_TOP_FORWARDS", "PP_UNITS", "REQUIRE_PP1",
-            "TIGHT_TEAMS", "LEAKY_TEAMS", "BLEND_GAMES", "TEAM_BLEND_GAMES", "MAX_JUICE", "TARGET_MAX_JUICE", "PLUS_K",
+            "TIGHT_TEAMS", "LEAKY_TEAMS", "BLEND_GAMES", "TEAM_BLEND_GAMES", "MAX_JUICE", "TARGET_MAX_JUICE", "MIN_CHANCE", "PLUS_K",
             "PLUS_LEGS", "PLUS_RECENT_HIT", "PLUS_VS_HIT", "PLUS_STREAK", "PLUS_MIN_PRICE", "PLUS_EDGE",
             "FUN_K", "FUN_MIN_PRICE", "FUN_RECENT_HIT", "FUN_STREAK", "ODDS_MONTHLY_CAP", "ODDS_RESERVE",
             "RECORD_SINCE"]
-PERCENTS = {"RECENT_HIT", "VS_HIT", "HOT_RECENT", "HOT_VS", "PLUS_RECENT_HIT", "PLUS_VS_HIT",
+PERCENTS = {"MIN_CHANCE", "RECENT_HIT", "VS_HIT", "HOT_RECENT", "HOT_VS", "PLUS_RECENT_HIT", "PLUS_VS_HIT",
             "PLUS_EDGE", "FUN_RECENT_HIT"}
 
 
