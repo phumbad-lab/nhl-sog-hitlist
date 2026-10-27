@@ -66,6 +66,8 @@ SOG check · Mon Oct 12
 
 **Who's most likely in one game:** text the bot a team and a number, e.g. `FLA 3`. It replies with the 6 players in that game most likely to get 3+ shots, with DK prices. No credits used.
 
+**Likeliest on the whole slate:** text `anchor 3` for the 5 players most likely to get 3+ shots tonight, with their records and DK prices.
+
 Last names are fine unless two players share one. A check uses no odds credits, and it doesn't change the day's list or log.
 
 **Check your settings:** type `settings` in the **check** box when you run the workflow. You get a message listing every setting the bot is using, with `*` next to the ones set in your Variables tab.

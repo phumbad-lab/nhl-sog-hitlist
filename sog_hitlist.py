@@ -1090,7 +1090,8 @@ HELP_TEXT = ("Text me a player's last name (or several, separated by commas) and
              "made today's list and, if not, which rule cut him.\n"
              "Text a team and a number for who's most likely to get that many shots in its game "
              "today: FLA 3 · BUF 2\n"
-             "Examples: dorofeyev · kadri, raddysh · FLA 3 · settings")
+             "Text anchor 3 for the 5 likeliest 3+ shooters on tonight's whole slate.\n"
+             "Examples: dorofeyev · kadri, raddysh · FLA 3 · anchor 3 · settings")
 
 
 def telegram_api(method, params):
@@ -1106,6 +1107,36 @@ NHL_TEAMS = {"ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET
              "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
              "TOR", "UTA", "VAN", "VGK", "WPG", "WSH"}
 GAME_RE = re.compile(r"^([A-Za-z]{3})\s*(\d)\+?$")
+
+
+SLATE_RE = re.compile(r"^anchors?\s*(\d)\+?$", re.I)
+SLATE_SIZE = 5
+
+
+def slate_board(k, day, state):
+    """'anchor 3': the 5 players on tonight's whole slate most likely to get k+ shots, with stats.
+    Same pool and saved prices as the morning list, so no credits."""
+    rs = state.get("today") or {}
+    title = f"Top {SLATE_SIZE} for {k}+ shots · {day.strftime('%a %b %-d')}"
+    if rs.get("date") != day.isoformat():
+        return title, "Today's research hasn't run yet. Try again after the 7:05 list."
+    cands = [c for c in rs["cands"] if not c.get("missed")]
+    if not cands:
+        return title, "No games today."
+    if str(k) not in cands[0]["probs"]:
+        return title, f"I only track 2+ to {THRESHOLDS[-1]}+. Try anchor 3."
+    have = state.get("dk", {}).get("games", {})
+    cands.sort(key=lambda c: c["probs"][str(k)], reverse=True)
+    lines = []
+    for i, c in enumerate(cands[:SLATE_SIZE], 1):
+        price, _ = dk_price(c, k, have)
+        r_hits, v_hits = c["detail"][str(k)]
+        lines.append(f"{i}. {c['name']} ({c['team']}) vs {c['opp']} · {c['probs'][str(k)]:.0%} · "
+                     f"DK {fmt_price(price) if price is not None else 'no line'}\n"
+                     f"   L{c['r_n']} {k}+ in {r_hits}/{c['r_n']} · vs {c['opp']} {k}+ in {v_hits}/{c['v_n']} · "
+                     f"{c['rate']:.1f} shots/gm · last game {c.get('last_shots')}")
+    lines.append(f"\nFor reference, the likeliest {k}+ shooter each night hit about 6 times in 10 (Oct 10-22).")
+    return title, "\n".join(lines)
 
 
 def game_board(team, k, day, state):
@@ -1164,6 +1195,9 @@ def answer_texts():
             send_push("SOG bot", HELP_TEXT, silent=False)
         elif words.lower() == "settings":
             send_push(f"SOG settings · {day.strftime('%a %b %-d')}", settings_report(), silent=False)
+        elif SLATE_RE.match(words):
+            title, body = slate_board(int(SLATE_RE.match(words).group(1)), day, state)
+            send_push(title, body, silent=False)
         elif GAME_RE.match(words) and GAME_RE.match(words).group(1).upper() in NHL_TEAMS:
             m_ = GAME_RE.match(words)
             title, body = game_board(m_.group(1).upper(), int(m_.group(2)), day, state)
