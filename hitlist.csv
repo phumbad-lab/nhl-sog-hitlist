@@ -118,4 +118,16 @@ date,section,player,player_id,team,opponent,leg,hit_pct,fair_odds,dk_odds,dk_see
 2026-10-25,fun2,Sam Reinhart,8477933,FLA,CHI,2,81,-430,-270,07:05,Y,2,W,+0.37
 2026-10-25,fun2,Roman Josi,8474600,NSH,COL,2,78,-355,-210,07:05,Y,4,W,+0.48
 2026-10-25,fun2,Cale Makar,8480069,COL,NSH,2,75,-306,-400,07:05,Y,1,L,-1.00
-2026-10-26,anchor,Pavel Dorofeyev,8481604,NYR,LAK,2,84,-513,-450,07:05,,,,
+2026-10-26,anchor,Pavel Dorofeyev,8481604,NYR,LAK,2,84,-513,-450,07:05,,1,L,-1.00
+2026-10-27,anchor,Kyle Connor,8478398,WPG,FLA,2,93,-1329,-600,07:05,,,,
+2026-10-27,anchor,Bo Horvat,8477500,NYI,NSH,2,90,-932,-525,07:05,,,,
+2026-10-27,anchor,Matt Boldy,8481557,MIN,UTA,2,89,-784,-600,07:05,,,,
+2026-10-27,anchor,Kirill Kaprizov,8478864,MIN,UTA,2,89,-780,-575,07:05,,,,
+2026-10-27,anchor,Jason Robertson,8480027,DAL,NJD,2,86,-626,-425,07:05,,,,
+2026-10-27,anchor,Dylan Guenther,8482699,UTA,MIN,2,81,-427,-525,07:05,,,,
+2026-10-27,fun2,Jack Eichel,8478403,VGK,OTT,2,87,-669,-400,07:05,Y,,,
+2026-10-27,fun2,Seth Jarvis,8482093,CAR,BOS,2,84,-510,-235,07:05,Y,,,
+2026-10-27,fun2,Roman Josi,8474600,NSH,NYI,2,78,-350,-255,07:05,Y,,,
+2026-10-27,fun2,Dylan Cozens,8481528,OTT,VGK,2,77,-332,-195,07:05,Y,,,
+2026-10-27,fun2,Jake Sanderson,8482105,OTT,VGK,2,76,-309,-115,07:05,,,,
+2026-10-27,fun2,Alex Laferriere,8482155,LAK,CHI,2,75,-304,-295,07:05,,,,
