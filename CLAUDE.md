@@ -148,6 +148,14 @@ The check message (Oct 12 redesign; the owner found the old one jumbled): a stat
 - Rejected: watch list of favorite players ("they were axed for a reason"). Leaky/tight defense filters (removed). Value-based fun bet and ticket (switched to chance of hitting). 5-game streak and last-10 rule (replaced after the backtest). Second free Odds API key.
 - 7:05 send time: five minutes after the saves alert.
 
+## Backtest workflow (Oct 28)
+
+`backtest.py` + `.github/workflows/backtest.yml` ("Backtest", manual only). Rebuilds each morning's numbers (L20, vs-opponent, shot rate over last 40, same estimated-chance formula) for 204 regular shooters (2.0+ shots/gm), 2025-26 plus 2026-27 so far: 16,542 player-games, 196 game days. No odds. Filters are chosen on games before Jan 15, 2026 and checked on later games. Results are force-pushed to branch `backtest-results` (`backtest_results.txt`). Read with `git fetch origin +refs/heads/backtest-results:refs/remotes/origin/backtest-results`. Run logs can't be read from Claude's sandbox; trigger with `gh workflow run backtest.yml`.
+
+First run (Oct 28):
+- **3+ can't reach 90%.** Model 70-80% at 3+ hit only **64%** (overconfident); 80%+ almost never happens (33 player-games). Likeliest 3+ shooter each night: **67%**; top 3: 65%; top 5: 61%. No filter reached 90% even on the games it was chosen on; the best ones fell to 50-68% on later games.
+- **2+ for reference (no odds):** likeliest each night 85%, top 5 82%. Model 85-90% at 2+ hit 83%. Widest 90% filter: 3.5+ shots/gm, had 2+ last game, **home only**: 90.6% on the first half → 89.5% later (114 picks, ~1 a night). The home effect is a lead to test against the live DK-band anchors, not a rule yet.
+
 ## Pending, and things to test later
 
 - **About Oct 17–18 (one week of the new rules):** review the Season line with the owner before changing anything:
