@@ -22,6 +22,7 @@ jobs:
         run: python3 backtest.py
 
       - name: Save results to the backtest-results branch
+        if: always()
         run: |
           cp backtest_results.txt /tmp/results.txt
           git config user.name "sog-hitlist-bot"

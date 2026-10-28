@@ -40,7 +40,11 @@ def get(url, tries=3):
 def pool():
     ids = {}
     for season in ("20252026", "20262027"):
-        rows = get(f"{m.NHL_STATS}/skater/summary?limit=-1&cayenneExp=seasonId={season}%20and%20gameTypeId=2").get("data", [])
+        try:
+            rows = m.stats_rows("skater/summary", season)
+        except Exception as e:
+            say(f"(couldn't read {season} skater list: {e})")
+            rows = []
         for r in rows:
             gp, sh = r.get("gamesPlayed") or 0, r.get("shots") or 0
             need_gp = MIN_GP if season == "20252026" else 5
@@ -102,7 +106,8 @@ def main():
     by_date = defaultdict(list)
     for r in rows:
         by_date[r["date"]].append(r)
-    say(f"Game days: {len(by_date)}")
+    days = len(by_date)
+    say(f"Game days: {days}")
 
     def rate_of(sel, k):
         return (sum(r[f"hit{k}"] for r in sel), len(sel))
@@ -177,4 +182,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        import traceback
+        say("CRASHED:\n" + traceback.format_exc())
+        with open("backtest_results.txt", "w") as f:
+            f.write("\n".join(out_lines) + "\n")
+        raise
