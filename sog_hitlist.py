@@ -91,7 +91,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 STATE_FILE = os.path.join(HERE, "state.json")
 LOG_FILE = os.path.join(HERE, "hitlist.csv")
 LOG_FIELDS = ["date", "section", "player", "player_id", "team", "opponent", "leg", "hit_pct",
-              "fair_odds", "dk_odds", "dk_seen_at", "in_ticket", "actual_sog", "result", "units"]
+              "fair_odds", "dk_odds", "dk_seen_at", "in_ticket", "actual_sog", "result", "units", "home"]
 TAIL_KEEP = 20          # recent games kept per player (enough to measure streaks)
 SEASONS_BACK = 3
 THRESHOLDS = (2, 3, 4, 5)
@@ -604,9 +604,10 @@ def research(day, state):
     leaky = {ab for ab, _, _ in ranking[:in_play]}
     games = [g for g in nhl_get(f"{NHL_WEB}/score/{day.isoformat()}").get("games", [])
              if g.get("gameScheduleState", "OK") == "OK"]
-    matchups = []
+    matchups, homes = [], []
     for g in games:
         a, h = g["awayTeam"]["abbrev"], g["homeTeam"]["abbrev"]
+        homes.append(h)
         if h in leaky:
             matchups.append((a, h))
         if a in leaky:
@@ -631,7 +632,7 @@ def research(day, state):
                     print(f"Skipped {name} ({e})")
                     continue
                 if c:
-                    cands.append(dict(c, toi=role["toi"], rank=role["rank"], pp1=role["pp1"]))
+                    cands.append(dict(c, toi=role["toi"], rank=role["rank"], pp1=role["pp1"], home=team in homes))
     # Flag anyone who missed his team's most recent game (injury / scratch).
     team_last = {}
     for c in cands:
@@ -639,7 +640,14 @@ def research(day, state):
     for c in cands:
         c["missed"] = c["last_played"] < team_last[c["team"]]
     return {"date": day.isoformat(), "abbrevs": abbrevs, "ranking": ranking[:in_play],
-            "matchups": matchups, "cands": cands}
+            "matchups": matchups, "cands": cands, "homes": homes}
+
+
+HOME_TAG = " 🏠"   # Oct 28: high-volume shooters hit 2+ 89% at home vs 81% on the road (backtest)
+
+
+def home_tag(c):
+    return HOME_TAG if c.get("home") else ""
 
 
 def select(rs, day, now, state, spend=True):
@@ -777,7 +785,7 @@ def format_list(day, res, followup=False):
             price = f"DK {fmt_price(a['price'])}" + (" ✓" if a["p"] > implied(a["price"]) + 0.03 else "")
         # The list is all 2+ legs (title says so), so the milestone isn't repeated per player.
         leg = "" if a["k"] == 2 else f" {a['k']}+"
-        return (f"{prefix}{a['name']} ({a['team']}){leg} vs {a['opp']} · (f {to_american(a['p'])}) · "
+        return (f"{prefix}{a['name']} ({a['team']}){home_tag(a)}{leg} vs {a['opp']} · (f {to_american(a['p'])}) · "
                 f"{price} · L{a['r_n']} {r_hits}/{a['r_n']} "
                 f"({a.get('streak_txts', {}).get(str(a['k']), a.get('streak_txt', 0))} straight) · "
                 f"vs {a['opp']} {v_hits}/{a['v_n']}")
@@ -837,7 +845,8 @@ def log_today(day, res):
                          "hit_pct": f"{a['p'] * 100:.0f}", "fair_odds": to_american(a["p"]),
                          "dk_odds": fmt_price(a["price"]) if a["price"] is not None else "",
                          "dk_seen_at": a.get("seen") or "",
-                         "in_ticket": "Y" if section == "fun2" and a["pid"] in ticket else ""})
+                         "in_ticket": "Y" if section == "fun2" and a["pid"] in ticket else "",
+                         "home": "" if a.get("home") is None else ("H" if a["home"] else "R")})
     save_log(rows)
 
 
@@ -1148,13 +1157,15 @@ def slate_board(k, day, state):
     for i, c in enumerate(cands[:SLATE_SIZE], 1):
         price, _ = dk_price(c, k, have)
         r_hits, v_hits = c["detail"][str(k)]
-        lines.append(f"{i}. {c['name']} ({c['team']}) vs {c['opp']} · {shown_chance(c['probs'][str(k)], k):.0%} · "
+        lines.append(f"{i}. {c['name']} ({c['team']}){home_tag(c)} vs {c['opp']} · {shown_chance(c['probs'][str(k)], k):.0%} · "
                      f"DK {fmt_price(price) if price is not None else 'no line'}\n"
                      f"   L{c['r_n']} {k}+ in {r_hits}/{c['r_n']} · vs {c['opp']} {k}+ in {v_hits}/{c['v_n']} · "
                      f"{c['rate']:.1f} shots/gm · last game {c.get('last_shots')}")
     if k == 3:
         lines.append("\nChances are matched to how 3+ picks actually did over the last season and a half: "
                      "the likeliest each night hit 67%, the top 5 61%.")
+    if any(c.get("home") for c in cands[:SLATE_SIZE]):
+        lines.append("🏠 = at home (high-volume shooters have hit more often at home).")
     return title, "\n".join(lines)
 
 
