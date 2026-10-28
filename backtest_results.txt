@@ -1,0 +1,126 @@
+Players: 204 regular shooters (2.0+ shots a game)
+Player-games evaluated: 16542
+Game days: 196
+
+===== 3+ SHOTS =====
+Model's chance vs what actually happened:
+  model 0%-50%: 4508/12243 = 36.8%
+  model 50%-60%: 1188/2373 = 50.1%
+  model 60%-65%: 528/861 = 61.3%
+  model 65%-70%: 405/639 = 63.4%
+  model 70%-75%: 187/291 = 64.3%
+  model 75%-80%: 66/102 = 64.7%
+  model 80%-85%: 22/28 = 78.6%
+  model 85%-90%: 3/4 = 75.0%
+  model 90%-100%: 0/1 = 0.0%
+Top picks each game day (ranked by model chance):
+  top 1: 132/196 = 67.3%
+  top 3: 382/588 = 65.0%
+  top 5: 600/980 = 61.2%
+Filters for 3+: chosen on games before 2026-01-15, checked on 2026-01-15 onward
+  Best 12 on the first half -> how they did afterwards:
+  first half 81.2% of 48 -> after 7/12 = 58.3% (0.12 a day): L20 3+ >= 15/20, 4.0+ shots/gm
+  first half 80.5% of 41 -> after 5/10 = 50.0% (0.10 a day): L20 3+ >= 15/20, 4.0+ shots/gm, 3+ streak >= 1
+  first half 78.6% of 42 -> after 24/26 = 92.3% (0.26 a day): L20 3+ >= 12/20, 4.0+ shots/gm, home only
+  first half 76.9% of 65 -> after 11/21 = 52.4% (0.21 a day): L20 3+ >= 14/20, 4.0+ shots/gm
+  first half 76.5% of 81 -> after 39/57 = 68.4% (0.56 a day): L20 3+ >= 12/20, 4.0+ shots/gm
+  first half 76.4% of 55 -> after 7/16 = 43.8% (0.16 a day): L20 3+ >= 14/20, 4.0+ shots/gm, 3+ streak >= 1
+  first half 74.7% of 75 -> after 32/50 = 64.0% (0.50 a day): L20 3+ >= 13/20, 4.0+ shots/gm
+  first half 74.0% of 50 -> after 100/147 = 68.0% (1.46 a day): L20 3+ >= 13/20, 3.0+ shots/gm, vs opp 3+ >= 80% (4+ games)
+  first half 73.8% of 65 -> after 24/40 = 60.0% (0.40 a day): L20 3+ >= 12/20, 4.0+ shots/gm, 3+ streak >= 1
+  first half 73.2% of 56 -> after 112/167 = 67.1% (1.65 a day): L20 3+ >= 13/20, 2.5+ shots/gm, vs opp 3+ >= 80% (4+ games)
+  first half 72.6% of 62 -> after 22/38 = 57.9% (0.38 a day): L20 3+ >= 13/20, 4.0+ shots/gm, 3+ streak >= 1
+  first half 72.3% of 47 -> after 13/24 = 54.2% (0.24 a day): L20 3+ >= 16/20, 3.5+ shots/gm, 3+ streak >= 3
+  Widest filters at 90%+ on the first half (0 reach it):
+Likeliest 3+ player each day, only when his chance is at least:
+  60%: 131/195 = 67.2% (195 of 196 days)
+  70%: 109/159 = 68.6% (159 of 196 days)
+  75%: 66/96 = 68.8% (96 of 196 days)
+  80%: 24/31 = 77.4% (31 of 196 days)
+  85%: 3/5 = 60.0% (5 of 196 days)
+
+===== 2+ SHOTS =====
+Model's chance vs what actually happened:
+  model 0%-50%: 1055/2044 = 51.6%
+  model 50%-60%: 2187/3555 = 61.5%
+  model 60%-65%: 1631/2591 = 62.9%
+  model 65%-70%: 1590/2426 = 65.5%
+  model 70%-75%: 1472/2118 = 69.5%
+  model 75%-80%: 1251/1656 = 75.5%
+  model 80%-85%: 948/1209 = 78.4%
+  model 85%-90%: 593/713 = 83.2%
+  model 90%-100%: 198/230 = 86.1%
+Top picks each game day (ranked by model chance):
+  top 1: 166/196 = 84.7%
+  top 3: 486/588 = 82.7%
+  top 5: 804/980 = 82.0%
+Filters for 2+: chosen on games before 2026-01-15, checked on 2026-01-15 onward
+  Best 12 on the first half -> how they did afterwards:
+  first half 95.6% of 68 -> after 28/35 = 80.0% (0.35 a day): L20 2+ >= 12/20, 4.0+ shots/gm, 2+ streak >= 3
+  first half 95.6% of 68 -> after 28/35 = 80.0% (0.35 a day): L20 2+ >= 13/20, 4.0+ shots/gm, 2+ streak >= 3
+  first half 95.6% of 68 -> after 28/35 = 80.0% (0.35 a day): L20 2+ >= 14/20, 4.0+ shots/gm, 2+ streak >= 3
+  first half 95.6% of 68 -> after 28/35 = 80.0% (0.35 a day): L20 2+ >= 15/20, 4.0+ shots/gm, 2+ streak >= 3
+  first half 95.6% of 68 -> after 28/35 = 80.0% (0.35 a day): L20 2+ >= 16/20, 4.0+ shots/gm, 2+ streak >= 3
+  first half 95.4% of 65 -> after 27/34 = 79.4% (0.34 a day): L20 2+ >= 17/20, 4.0+ shots/gm, 2+ streak >= 3
+  first half 95.2% of 63 -> after 11/17 = 64.7% (0.17 a day): L20 2+ >= 18/20, 4.0+ shots/gm, 2+ streak >= 3
+  first half 95.2% of 42 -> after 25/26 = 96.2% (0.26 a day): L20 2+ >= 12/20, 4.0+ shots/gm, home only
+  first half 95.2% of 42 -> after 23/24 = 95.8% (0.24 a day): L20 2+ >= 12/20, 4.0+ shots/gm, 2+ streak >= 1, home only
+  first half 95.2% of 42 -> after 25/26 = 96.2% (0.26 a day): L20 2+ >= 13/20, 4.0+ shots/gm, home only
+  first half 95.2% of 42 -> after 23/24 = 95.8% (0.24 a day): L20 2+ >= 13/20, 4.0+ shots/gm, 2+ streak >= 1, home only
+  first half 95.2% of 42 -> after 25/26 = 96.2% (0.26 a day): L20 2+ >= 14/20, 4.0+ shots/gm, home only
+  Widest filters at 90%+ on the first half (40 reach it):
+  first half 90.6% of 171 -> after 102/114 = 89.5% (1.13 a day): L20 2+ >= 12/20, 3.5+ shots/gm, 2+ streak >= 1, home only
+  first half 90.6% of 171 -> after 102/114 = 89.5% (1.13 a day): L20 2+ >= 13/20, 3.5+ shots/gm, 2+ streak >= 1, home only
+  first half 90.6% of 171 -> after 102/114 = 89.5% (1.13 a day): L20 2+ >= 14/20, 3.5+ shots/gm, 2+ streak >= 1, home only
+  first half 90.5% of 169 -> after 102/114 = 89.5% (1.13 a day): L20 2+ >= 15/20, 3.5+ shots/gm, 2+ streak >= 1, home only
+  first half 91.0% of 156 -> after 93/105 = 88.6% (1.04 a day): L20 2+ >= 16/20, 3.5+ shots/gm, 2+ streak >= 1, home only
+Likeliest 2+ player each day, only when his chance is at least:
+  60%: 166/196 = 84.7% (196 of 196 days)
+  70%: 166/196 = 84.7% (196 of 196 days)
+  75%: 166/196 = 84.7% (196 of 196 days)
+  80%: 166/196 = 84.7% (196 of 196 days)
+  85%: 158/186 = 84.9% (186 of 196 days)
+
+===== HOME vs ROAD =====
+  2+ · all regular shooters: home 5521/8272 = 66.7% · road 5404/8270 = 65.3%
+  2+ · 3.5+ shots/gm: home 360/408 = 88.2% · road 341/416 = 82.0%
+  2+ · 3.5+ shots/gm, 2+ last game: home 325/365 = 89.0% · road 297/365 = 81.4%
+  2+ · 3.0-3.5 shots/gm: home 678/830 = 81.7% · road 669/834 = 80.2%
+  2+ · 2.5-3.0 shots/gm: home 1315/1849 = 71.1% · road 1284/1830 = 70.2%
+  2+ · model 80%+ at this milestone: home 877/1070 = 82.0% · road 862/1082 = 79.7%
+  2+ · 3.5+/gm, 2+ last game, 20252026: home 276/310 = 89.0% · road 252/310 = 81.3%
+  2+ · 3.5+/gm, 2+ last game, 20262027: home 49/55 = 89.1% · road 45/55 = 81.8%
+  3+ · all regular shooters: home 3556/8272 = 43.0% · road 3351/8270 = 40.5%
+  3+ · 3.5+ shots/gm: home 291/408 = 71.3% · road 253/416 = 60.8%
+  3+ · 3.5+ shots/gm, 2+ last game: home 258/365 = 70.7% · road 220/365 = 60.3%
+  3+ · 3.0-3.5 shots/gm: home 520/830 = 62.7% · road 476/834 = 57.1%
+  3+ · 2.5-3.0 shots/gm: home 886/1849 = 47.9% · road 828/1830 = 45.2%
+  3+ · model 80%+ at this milestone: home 15/20 = 75.0% · road 10/13 = 76.9%
+  3+ · 3.5+/gm, 2+ last game, 20252026: home 218/310 = 70.3% · road 186/310 = 60.0%
+  3+ · 3.5+/gm, 2+ last game, 20262027: home 40/55 = 72.7% · road 34/55 = 61.8%
+
+===== CALIBRATION TABLE (model chance -> actual), 5-point buckets =====
+  CAL2 0.327 0.435 168
+  CAL2 0.377 0.491 289
+  CAL2 0.426 0.517 497
+  CAL2 0.477 0.572 864
+  CAL2 0.527 0.605 1367
+  CAL2 0.577 0.622 2188
+  CAL2 0.625 0.629 2591
+  CAL2 0.674 0.655 2426
+  CAL2 0.724 0.695 2118
+  CAL2 0.774 0.755 1656
+  CAL2 0.823 0.784 1209
+  CAL2 0.871 0.832 713
+  CAL2 0.918 0.858 212
+  CAL3 0.326 0.351 2110
+  CAL3 0.376 0.388 2310
+  CAL3 0.425 0.417 2342
+  CAL3 0.474 0.439 1823
+  CAL3 0.523 0.483 1378
+  CAL3 0.574 0.526 995
+  CAL3 0.624 0.613 861
+  CAL3 0.673 0.634 639
+  CAL3 0.721 0.643 291
+  CAL3 0.771 0.647 102
+  CAL3 0.819 0.786 28
