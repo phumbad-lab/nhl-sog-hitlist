@@ -1,0 +1,34 @@
+name: Backtest
+
+# Manual only. Rebuilds the bot's picks from real game logs (2025-26 and this season) and checks
+# how often they hit. Results go to the "backtest-results" branch (backtest_results.txt); the
+# main branch, the list and the log are never touched.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Run backtest
+        run: python3 backtest.py
+
+      - name: Save results to the backtest-results branch
+        run: |
+          cp backtest_results.txt /tmp/results.txt
+          git config user.name "sog-hitlist-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan backtest-results
+          git rm -rfq .
+          cp /tmp/results.txt backtest_results.txt
+          git add backtest_results.txt
+          git commit -qm "Backtest results"
+          git push -f origin backtest-results
