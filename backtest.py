@@ -177,6 +177,33 @@ def main():
             h, n = rate_of(sel, k)
             say(f"  {floor:.0%}: {fmt(h, n)} ({n} of {days} days)")
 
+    say("")
+    say("===== HOME vs ROAD =====")
+    for k in (2, 3):
+        for label, f in (("all regular shooters", lambda r: True),
+                         ("3.5+ shots/gm", lambda r: r["rate"] >= 3.5),
+                         ("3.5+ shots/gm, 2+ last game", lambda r: r["rate"] >= 3.5 and r["s2"] >= 1),
+                         ("3.0-3.5 shots/gm", lambda r: 3.0 <= r["rate"] < 3.5),
+                         ("2.5-3.0 shots/gm", lambda r: 2.5 <= r["rate"] < 3.0),
+                         ("model 80%+ at this milestone", lambda r: r[f"p{k}"] >= .8)):
+            h1, n1 = rate_of([r for r in rows if f(r) and r["home"]], k)
+            h2, n2 = rate_of([r for r in rows if f(r) and not r["home"]], k)
+            say(f"  {k}+ · {label}: home {fmt(h1, n1)} · road {fmt(h2, n2)}")
+        for season in sorted(EVAL):
+            h1, n1 = rate_of([r for r in rows if r["season"] == season and r["rate"] >= 3.5 and r["s2"] >= 1 and r["home"]], k)
+            h2, n2 = rate_of([r for r in rows if r["season"] == season and r["rate"] >= 3.5 and r["s2"] >= 1 and not r["home"]], k)
+            say(f"  {k}+ · 3.5+/gm, 2+ last game, {season}: home {fmt(h1, n1)} · road {fmt(h2, n2)}")
+
+    say("")
+    say("===== CALIBRATION TABLE (model chance -> actual), 5-point buckets =====")
+    for k in (2, 3):
+        for lo in [x / 100 for x in range(30, 100, 5)]:
+            sel = [r for r in rows if lo <= r[f"p{k}"] < lo + .05]
+            if len(sel) >= 20:
+                mean = sum(r[f"p{k}"] for r in sel) / len(sel)
+                h, n = rate_of(sel, k)
+                say(f"  CAL{k} {mean:.3f} {h / n:.3f} {n}")
+
     with open("backtest_results.txt", "w") as f:
         f.write("\n".join(out_lines) + "\n")
 
