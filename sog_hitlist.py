@@ -998,7 +998,7 @@ def checklist(c, role, pos, team, opp, rate, have, sa_rank, n_teams):
         out.append(f"✅ DK 2+: {fmt_price(price)} · anchor range ({MAX_JUICE - 1} to {TARGET_MAX_JUICE})")
     else:
         out.append(f"❌ DK 2+: {fmt_price(price)} · shorter than {TARGET_MAX_JUICE}, not listed")
-    out.append(f"📊 Chance: 2+ {p2:.0%} (fair {to_american(p2)})" + (f" · 3+ {p3:.0%}" if p3 is not None else ""))
+    out.append(f"📊 Chance: 2+ {p2:.0%} (fair {to_american(p2)})" + (f" · 3+ {shown_chance(p3, 3):.0%}" if p3 is not None else ""))
     if FUN_BET and str(FUN_K) in c["detail"]:
         r3 = c["detail"][str(FUN_K)][0]
         p_fun, _ = dk_price(c, FUN_K, have)
@@ -1109,6 +1109,23 @@ NHL_TEAMS = {"ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET
 GAME_RE = re.compile(r"^([A-Za-z]{3})\s*(\d)\+?$")
 
 
+# 3+ chances run high at the top end (Oct 28 backtest, 16,542 player-games): the model's 72% hit 64%,
+# 77% hit 65%. Shown 3+ chances are mapped through this table (model -> actual), so the replies are
+# honest. Ranking doesn't change (the map only goes up). The top point is shrunk (only 28 games).
+CAL3 = [(0.0, 0.0), (0.326, 0.351), (0.376, 0.388), (0.425, 0.417), (0.474, 0.439), (0.523, 0.483),
+        (0.574, 0.526), (0.624, 0.613), (0.673, 0.634), (0.721, 0.643), (0.771, 0.647), (0.82, 0.68)]
+
+
+def shown_chance(p, k):
+    """The chance to show for a k+ leg: backtested for 3+, the model's own number otherwise."""
+    if k != 3:
+        return p
+    for (x0, y0), (x1, y1) in zip(CAL3, CAL3[1:]):
+        if p <= x1:
+            return y0 + (y1 - y0) * (p - x0) / (x1 - x0)
+    return CAL3[-1][1]
+
+
 SLATE_RE = re.compile(r"^anchors?\s*(\d)\+?$", re.I)
 SLATE_SIZE = 5
 
@@ -1131,11 +1148,13 @@ def slate_board(k, day, state):
     for i, c in enumerate(cands[:SLATE_SIZE], 1):
         price, _ = dk_price(c, k, have)
         r_hits, v_hits = c["detail"][str(k)]
-        lines.append(f"{i}. {c['name']} ({c['team']}) vs {c['opp']} · {c['probs'][str(k)]:.0%} · "
+        lines.append(f"{i}. {c['name']} ({c['team']}) vs {c['opp']} · {shown_chance(c['probs'][str(k)], k):.0%} · "
                      f"DK {fmt_price(price) if price is not None else 'no line'}\n"
                      f"   L{c['r_n']} {k}+ in {r_hits}/{c['r_n']} · vs {c['opp']} {k}+ in {v_hits}/{c['v_n']} · "
                      f"{c['rate']:.1f} shots/gm · last game {c.get('last_shots')}")
-    lines.append(f"\nFor reference, the likeliest {k}+ shooter each night hit about 6 times in 10 (Oct 10-22).")
+    if k == 3:
+        lines.append("\nChances are matched to how 3+ picks actually did over the last season and a half: "
+                     "the likeliest each night hit 67%, the top 5 61%.")
     return title, "\n".join(lines)
 
 
@@ -1160,7 +1179,7 @@ def game_board(team, k, day, state):
     for i, c in enumerate(cands[:GAME_BOARD_SIZE], 1):
         price, _ = dk_price(c, k, have)
         r_hits, v_hits = c["detail"][str(k)]
-        lines.append(f"{i}. {c['name']} ({c['team']}) {c['probs'][str(k)]:.0%} · "
+        lines.append(f"{i}. {c['name']} ({c['team']}) {shown_chance(c['probs'][str(k)], k):.0%} · "
                      f"DK {fmt_price(price) if price is not None else 'no line'} · "
                      f"L{c['r_n']} {r_hits}/{c['r_n']} · vs {c['opp']} {v_hits}/{c['v_n']}")
     lines.append("\nTop-line players only (top 6 F, top 4 D, PP forwards; 1.5–5 shots a game).")
