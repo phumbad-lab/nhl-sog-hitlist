@@ -100,7 +100,7 @@ The owner trimmed it on Oct 8: no TOI or line info in the list, no "est %", fair
 ```
 SOG +2 Hit List · Sat Oct 10
 ANCHORS
-1. Jack Eichel (VGK) vs MIN · (f -970) · DK -550 ✓ · L20 20/20 (20+ straight) · vs MIN 5/6
+1. Jack Eichel (VGK) 🏠 vs MIN · (f -970) · DK -550 ✓ · L20 20/20 (20+ straight) · vs MIN 5/6
 2. Bo Horvat (NYI) vs TBL · (f -476) · no DK line · L20 18/20 (8 straight) · vs TBL 6/8
 
 FUN BETS (-400 or longer)
@@ -155,7 +155,7 @@ The check message (Oct 12 redesign; the owner found the old one jumbled): a stat
 First run (Oct 28):
 - **3+ can't reach 90%.** Model 70-80% at 3+ hit only **64%** (overconfident); 80%+ almost never happens (33 player-games). Likeliest 3+ shooter each night: **67%**; top 3: 65%; top 5: 61%. No filter reached 90% even on the games it was chosen on; the best ones fell to 50-68% on later games.
 - **2+ for reference (no odds):** likeliest each night 85%, top 5 82%. Model 85-90% at 2+ hit 83%. Widest 90% filter: 3.5+ shots/gm, had 2+ last game, **home only**: 90.6% on the first half → 89.5% later (114 picks, ~1 a night). The home effect is a lead to test against the live DK-band anchors, not a rule yet.
-- **Home vs road (second run, Oct 28):** for 3.5+ shots/gm shooters who had 2+ last game, 2+ hit **89% at home vs 81% on the road**, and 3+ hit **71% vs 60%**. The same gap shows in both seasons separately (2025-26: 89/81, 70/60; 2026-27 so far: 89/82, 73/62). For lower-volume shooters the gap is only 1-3 points. Not a rule yet: the owner was offered a 🏠 tag and home/road logging to test it against the live DK-priced anchors.
+- **Home vs road (second run, Oct 28):** for 3.5+ shots/gm shooters who had 2+ last game, 2+ hit **89% at home vs 81% on the road**, and 3+ hit **71% vs 60%**. The same gap shows in both seasons separately (2025-26: 89/81, 70/60; 2026-27 so far: 89/82, 73/62). For lower-volume shooters the gap is only 1-3 points. Not a rule yet. **Since Oct 29:** research stores `home` per candidate (`rs["homes"]`), anchor lines and the `anchor 3` reply show 🏠 for home players, and `hitlist.csv` has a `home` column (H/R; blank before Oct 29). **Around mid-November:** compare home vs road anchors at similar DK prices before making it a rule.
 - **3+ chances in replies are calibrated (Oct 28):** `CAL3` / `shown_chance()` map the model's 3+ chance to what the backtest saw (e.g. 77% → 65%, 72% → 64%). Used in `anchor 3`, team boards (`FLA 3`) and the checklist. Ranking unchanged; the list's 2+ numbers are not adjusted.
 
 ## Pending, and things to test later
