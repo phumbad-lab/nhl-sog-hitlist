@@ -157,10 +157,12 @@ date,section,player,player_id,team,opponent,leg,hit_pct,fair_odds,dk_odds,dk_see
 2026-10-31,fun2,Alex Laferriere,8482155,LAK,BUF,2,79,-368,-320,07:05,Y,3,W,+0.31,H
 2026-10-31,fun2,Rickard Rakell,8476483,PIT,MTL,2,78,-356,-255,07:05,Y,2,W,+0.39,R
 2026-10-31,fun2,Martin Necas,8480039,COL,CGY,2,75,-300,-380,07:05,,2,W,+0.26,H
-2026-11-01,anchor,Leon Draisaitl,8477934,EDM,NYR,2,83,-493,-525,07:05,,,,,R
-2026-11-01,anchor,Kirill Kaprizov,8478864,MIN,WSH,2,83,-487,-600,07:05,,,,,R
-2026-11-01,anchor,Joel Eriksson Ek,8478493,MIN,WSH,2,82,-457,-425,07:05,,,,,R
-2026-11-01,fun2,Kyle Connor,8478398,WPG,CAR,2,88,-736,-370,07:05,Y,,,,R
-2026-11-01,fun2,Seth Jarvis,8482093,CAR,WPG,2,84,-507,-275,07:05,Y,,,,H
-2026-11-01,fun2,Logan Stankoven,8482702,CAR,WPG,2,80,-402,-295,07:05,,,,,H
-2026-11-01,fun2,Nick Schmaltz,8477951,UTA,PHI,2,77,-334,-195,07:05,Y,,,,R
+2026-11-01,anchor,Leon Draisaitl,8477934,EDM,NYR,2,83,-493,-525,07:05,,3,W,+0.19,R
+2026-11-01,anchor,Kirill Kaprizov,8478864,MIN,WSH,2,83,-487,-600,07:05,,2,W,+0.17,R
+2026-11-01,anchor,Joel Eriksson Ek,8478493,MIN,WSH,2,82,-457,-425,07:05,,3,W,+0.24,R
+2026-11-01,fun2,Kyle Connor,8478398,WPG,CAR,2,88,-736,-370,07:05,Y,2,W,+0.27,R
+2026-11-01,fun2,Seth Jarvis,8482093,CAR,WPG,2,84,-507,-275,07:05,Y,3,W,+0.36,H
+2026-11-01,fun2,Logan Stankoven,8482702,CAR,WPG,2,80,-402,-295,07:05,,3,W,+0.34,H
+2026-11-01,fun2,Nick Schmaltz,8477951,UTA,PHI,2,77,-334,-195,07:05,Y,3,W,+0.51,R
+2026-11-02,anchor,David Pastrnak,8477956,BOS,VGK,2,86,-611,-500,05:03,,,,,H
+2026-11-02,anchor,Nazem Kadri,8475172,COL,CHI,2,77,-328,,05:03,,,,,R
