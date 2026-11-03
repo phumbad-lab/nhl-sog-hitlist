@@ -164,5 +164,11 @@ date,section,player,player_id,team,opponent,leg,hit_pct,fair_odds,dk_odds,dk_see
 2026-11-01,fun2,Seth Jarvis,8482093,CAR,WPG,2,84,-507,-275,07:05,Y,3,W,+0.36,H
 2026-11-01,fun2,Logan Stankoven,8482702,CAR,WPG,2,80,-402,-295,07:05,,3,W,+0.34,H
 2026-11-01,fun2,Nick Schmaltz,8477951,UTA,PHI,2,77,-334,-195,07:05,Y,3,W,+0.51,R
-2026-11-02,anchor,David Pastrnak,8477956,BOS,VGK,2,86,-611,-500,05:03,,,,,H
-2026-11-02,fun2,Nazem Kadri,8475172,COL,CHI,2,77,-328,-270,05:03,,,,,R
+2026-11-02,anchor,David Pastrnak,8477956,BOS,VGK,2,86,-611,-500,05:03,,7,W,+0.20,H
+2026-11-02,fun2,Nazem Kadri,8475172,COL,CHI,2,77,-328,-270,05:03,,4,W,+0.37,R
+2026-11-03,anchor,Brandon Hagel,8479542,TBL,DET,2,87,-651,-575,07:05,,,,,H
+2026-11-03,anchor,Alex DeBrincat,8479337,DET,TBL,2,86,-625,-525,07:05,,,,,R
+2026-11-03,anchor,Joel Eriksson Ek,8478493,MIN,PHI,2,82,-456,-425,07:05,,,,,R
+2026-11-03,anchor,Dylan Guenther,8482699,UTA,TOR,2,82,-450,-575,07:05,,,,,R
+2026-11-03,fun2,Rickard Rakell,8476483,PIT,VGK,2,80,-394,-400,07:05,Y,,,,H
+2026-11-03,fun2,Nazem Kadri,8475172,COL,CBJ,2,80,-391,-245,07:05,Y,,,,R
