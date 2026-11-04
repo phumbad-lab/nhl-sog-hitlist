@@ -130,6 +130,7 @@ The check message (Oct 12 redesign; the owner found the old one jumbled): a stat
 ## Known limits, and what went wrong and how it was fixed
 
 - **Oct 9 list never sent:** cron-job.org job was disabled. Enabled; 7:05 has fired on time since.
+- **Nov 4 list never sent:** the 7:05 run did all the work, then the Telegram send hit "connection reset by peer" and crashed (no retry), so nothing was saved and the GitHub backup schedule didn't fire that day. Fixed: `send_push` retries network errors 3 times (5/15/30 s) and `nhl_get` retries twice; a real Telegram rejection still stops at once. The list was sent by a forced run at 11:50. Runners are on Ubuntu 26 / Python 3.14 now; the script runs fine there. Logs of failed runs CAN be read from the sandbox: `gh api repos/phumbad-lab/nhl-sog-hitlist/actions/jobs/<job id>/logs`.
 - **Variables not reaching the script:** (1) workflow pasted into the repo root instead of `.github/workflows/`; (2) later an older workflow with an explicit env list (missing `RECENT_GAMES`, `STREAK`). Fixed with the `ALL_VARS` workflow. Diagnose with a `settings` check.
 - **Crash (exit code 1):** `ANCHORS` was entered as `8-10`. Fixed with lenient parsing and ⚠️ warnings.
 - **"Re-ran it but nothing came":** a run without `force` exits silently once today's list is sent (by design).

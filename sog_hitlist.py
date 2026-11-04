@@ -74,6 +74,7 @@ import math
 import os
 import re
 import sys
+import time
 import unicodedata
 import urllib.error
 import urllib.parse
@@ -188,8 +189,16 @@ FORCE = os.getenv("FORCE", "").strip().lower() in ("1", "true", "yes")
 
 def nhl_get(url):
     req = urllib.request.Request(url, headers={"User-Agent": "nhl-sog-hitlist/2.0"})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    for wait in (3, 10, None):   # retry network hiccups; a 404 etc. is raised straight away
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError:
+            raise
+        except (urllib.error.URLError, ConnectionError, TimeoutError, OSError):
+            if wait is None:
+                raise
+            time.sleep(wait)
 
 
 def odds_get(path, params):
@@ -251,14 +260,23 @@ def send_push(title, message, silent=None):
         "disable_web_page_preview": "true",
     }).encode("utf-8")
     req = urllib.request.Request(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", data=payload)
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
-            if not result.get("ok"):
-                sys.exit(f"Telegram error: {result}")
-    except urllib.error.HTTPError as e:
-        sys.exit(f"Telegram rejected the message ({e.code}). Check TELEGRAM_BOT_TOKEN and "
-                 f"TELEGRAM_CHAT_ID. {e.read().decode('utf-8', 'ignore')[:300]}")
+    # Nov 4: a one-off "connection reset" on the send killed the morning list. Retry network
+    # hiccups (about a minute in all); a real rejection (bad token or chat) still stops at once.
+    for attempt, wait in enumerate((5, 15, 30, None), 1):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+                if not result.get("ok"):
+                    sys.exit(f"Telegram error: {result}")
+            return
+        except urllib.error.HTTPError as e:
+            sys.exit(f"Telegram rejected the message ({e.code}). Check TELEGRAM_BOT_TOKEN and "
+                     f"TELEGRAM_CHAT_ID. {e.read().decode('utf-8', 'ignore')[:300]}")
+        except (urllib.error.URLError, ConnectionError, TimeoutError, OSError) as e:
+            if wait is None:
+                raise
+            print(f"Telegram send failed ({e}); retrying in {wait}s (try {attempt} of 4)")
+            time.sleep(wait)
 
 
 def load_state():
