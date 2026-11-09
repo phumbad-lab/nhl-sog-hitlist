@@ -1125,8 +1125,19 @@ def telegram_api(method, params):
     # Only ever this app's own bot: never the bot shared with the saves app.
     url = f"https://api.telegram.org/bot{SOG_BOT_TOKEN}/{method}"
     req = urllib.request.Request(url, data=urllib.parse.urlencode(params).encode("utf-8"))
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    for wait in (3, 8, None):   # Telegram sometimes drops the connection; try a couple more times
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError:
+            raise
+        except (urllib.error.URLError, ConnectionError, TimeoutError, OSError):
+            if wait is None:
+                raise
+            time.sleep(wait)
+
+
+NET_ERRORS = (urllib.error.URLError, ConnectionError, TimeoutError, OSError)
 
 
 GAME_BOARD_SIZE = 6
@@ -1225,18 +1236,35 @@ def answer_texts():
         offset = int(open(OFFSET_FILE).read().strip() or 0)
     except (FileNotFoundError, ValueError):
         offset = 0
-    updates = telegram_api("getUpdates", {"offset": offset, "timeout": 0}).get("result", [])
+    # Nov 9: a dropped Telegram connection used to fail the run (and email the owner) about 4 times
+    # a day. Now it ends quietly; the next check, 2 minutes later, picks the same messages up.
+    try:
+        updates = telegram_api("getUpdates", {"offset": offset, "timeout": 0}).get("result", [])
+    except NET_ERRORS as e:
+        print(f"Telegram didn't answer ({e}); the next check will pick messages up.")
+        return
     if not updates:
         print("No new messages.")
         return
     now = datetime.now(timezone.utc).astimezone(LOCAL_TZ)
     day = now.date()
     state = load_state()          # read only: replies never change the day's list or log
-    for u in updates:
-        offset = max(offset, u["update_id"] + 1)
+    try:
+        for u in updates:
+            answer_one(u, day, now, state)
+            offset = max(offset, u["update_id"] + 1)   # only past messages actually answered
+    except NET_ERRORS as e:
+        print(f"Telegram dropped the connection ({e}); unanswered messages wait for the next check.")
+    with open(OFFSET_FILE, "w") as f:
+        f.write(f"{offset}\n")
+
+
+def answer_one(u, day, now, state):
+    """Answer one incoming message (ignores other chats)."""
+    if True:
         msg = u.get("message") or {}
         if str((msg.get("chat") or {}).get("id")) != TELEGRAM_CHAT_ID:
-            continue
+            return
         text = (msg.get("text") or "").strip()
         words = re.sub(r"^/?(check|start)\b", "", text, flags=re.I).strip(" :,")
         if not words or words.lower() in ("help", "/help", "start"):
@@ -1257,8 +1285,6 @@ def answer_texts():
                 title, body = "SOG check", f"Couldn't check '{words}' right now ({e}). Try again in a few minutes."
             send_push(title, body, silent=False)
         print(f"Answered: {text!r}")
-    with open(OFFSET_FILE, "w") as f:
-        f.write(f"{offset}\n")
 
 
 SETTINGS = ["SEND_HOUR", "SEND_MINUTE", "FOLLOWUP_UNTIL", "ANCHORS", "ANCHOR_MAX_K", "RECENT_GAMES",
