@@ -1,7 +1,9 @@
 name: SOG replies
 
 # Answers messages you text the bot (a player's last name, "settings" or "help").
-# cron-job.org triggers this every 2 minutes; the schedule below is only a backup,
+# cron-job.org triggers this every 2 minutes, and each run checks twice (about a minute apart), so
+# replies come within about a minute. Don't trigger it every minute: a run takes a bit over a minute,
+# runs pile up, and GitHub drops the waiting ones as "failed" (Nov 9). The schedule below is only a backup,
 # limited to about 8 AM - midnight Eastern (times are UTC) so it doesn't run overnight.
 on:
   schedule:
@@ -25,8 +27,11 @@ jobs:
         with:
           ref: main
 
-      - name: Answer new messages
-        run: python3 sog_hitlist.py
+      - name: Answer new messages (checks now, then again about 50 seconds later)
+        run: |
+          python3 sog_hitlist.py
+          sleep 50
+          python3 sog_hitlist.py
         env:
           REPLY: "true"
           SOG_BOT_TOKEN: ${{ secrets.SOG_BOT_TOKEN }}   # this app's own bot only
