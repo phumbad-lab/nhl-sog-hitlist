@@ -137,6 +137,10 @@ def env_num(name, default, cast=int):
 SOG_BOT_TOKEN = os.getenv("SOG_BOT_TOKEN", "").strip()
 TELEGRAM_BOT_TOKEN = SOG_BOT_TOKEN or os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+# Owner Nov 13: the morning list also goes to his picks channel ("TheSaveMan", shared with the
+# saves app's plays) for friends, minus the Credits line. Posted by Sol Shoty only (an admin there
+# with Post Messages); never the shared bot. Variable SOG_CHANNEL_ID overrides; 0 turns it off.
+SOG_CHANNEL_ID = (os.getenv("SOG_CHANNEL_ID", "") or "-1004494282683").strip()
 ODDS_API_KEY = os.getenv("ODDS_API_KEY", "").strip()
 SILENT = (os.getenv("TELEGRAM_SILENT", "") or "true").strip().lower() in ("1", "true", "yes")
 SEND_HOUR = env_num("SEND_HOUR", 7)
@@ -247,7 +251,20 @@ def fmt_price(price):
     return "—" if price is None else (f"+{price}" if price > 0 else str(price))
 
 
-def send_push(title, message, silent=None):
+def channel_post(title, message):
+    """The morning list to the picks channel. Never stops the run: a failure here (bot removed
+    from the channel, Telegram hiccup) is printed and skipped; the owner's own list already went."""
+    if not SOG_BOT_TOKEN or SOG_CHANNEL_ID in ("", "0"):
+        return False
+    try:
+        send_push(title, message, silent=False, chat_id=SOG_CHANNEL_ID, token=SOG_BOT_TOKEN)
+        return True
+    except (SystemExit, Exception) as e:
+        print(f"Channel post skipped ({e}).")
+        return False
+
+
+def send_push(title, message, silent=None, chat_id=None, token=None):
     text = f"{title}\n{message}"
     if not (TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID):
         print(f"[dry run, no Telegram keys]\n{text}\n")
@@ -255,11 +272,11 @@ def send_push(title, message, silent=None):
     if len(text) > 4096:
         text = text[:4080] + "\n…(cut off)"
     payload = urllib.parse.urlencode({
-        "chat_id": TELEGRAM_CHAT_ID, "text": text,
+        "chat_id": chat_id or TELEGRAM_CHAT_ID, "text": text,
         "disable_notification": "true" if (SILENT if silent is None else silent) else "false",
         "disable_web_page_preview": "true",
     }).encode("utf-8")
-    req = urllib.request.Request(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", data=payload)
+    req = urllib.request.Request(f"https://api.telegram.org/bot{token or TELEGRAM_BOT_TOKEN}/sendMessage", data=payload)
     # Nov 4: a one-off "connection reset" on the send killed the morning list. Retry network
     # hiccups (about a minute in all); a real rejection (bad token or chat) still stops at once.
     for attempt, wait in enumerate((5, 15, 30, None), 1):
@@ -1362,8 +1379,10 @@ def main():
             body += "\n\n" + results
         body += "\n\n" + record_block(load_log())
         line = credits_line(state, now)
-        body += f"\n\n{line}" if line else ""
-        send_push(title, body)
+        send_push(title, body + (f"\n\n{line}" if line else ""))
+        # Friends' channel: same list, no Credits line; once a day (a forced resend doesn't repost).
+        if state.get("channel_sent") != day.isoformat() and channel_post(title, body):
+            state["channel_sent"] = day.isoformat()
         if res["matchups"]:
             log_today(day, res)
         state["last_sent"] = day.isoformat()
