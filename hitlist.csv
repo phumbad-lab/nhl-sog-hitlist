@@ -239,4 +239,21 @@ date,section,player,player_id,team,opponent,leg,hit_pct,fair_odds,dk_odds,dk_see
 2026-11-12,fun2,Adam Fantilli,8484166,CBJ,TBL,2,79,-374,-320,07:05,,2,W,+0.31,H
 2026-11-12,fun2,Seth Jarvis,8482093,CAR,SEA,2,77,-328,-215,07:05,,1,L,-1.00,R
 2026-11-12,fun2,Luke Evangelista,8482146,NJD,WSH,2,76,-315,-235,07:05,,0,L,-1.00,H
-2026-11-13,anchor,Pavel Dorofeyev,8481604,NYR,VAN,2,81,-420,-425,07:05,,,,,R
+2026-11-13,anchor,Pavel Dorofeyev,8481604,NYR,VAN,2,81,-420,-425,07:05,,4,W,+0.24,R
+2026-11-14,anchor,Bo Horvat,8477500,NYI,ANA,2,93,-1323,-550,07:05,,,,,R
+2026-11-14,anchor,Alex DeBrincat,8479337,DET,TBL,2,88,-745,-475,07:05,,,,,R
+2026-11-14,anchor,Nathan MacKinnon,8477492,COL,MTL,2,85,-583,,07:05,,,,,R
+2026-11-14,anchor,Kirill Kaprizov,8478864,MIN,BOS,2,85,-575,-525,07:05,,,,,R
+2026-11-14,anchor,Brady Tkachuk,8480801,FLA,STL,2,85,-551,-600,07:05,,,,,R
+2026-11-14,anchor,Jason Robertson,8480027,DAL,BUF,2,84,-514,-550,07:05,,,,,H
+2026-11-14,anchor,Connor McDavid,8478402,EDM,TOR,2,83,-473,-600,07:05,,,,,R
+2026-11-14,anchor,Adrian Kempe,8477960,LAK,CGY,2,81,-433,-550,07:05,,,,,H
+2026-11-14,anchor,Auston Matthews,8479318,TOR,EDM,2,81,-419,-575,07:05,,,,,H
+2026-11-14,anchor,Nazem Kadri,8475172,COL,MTL,2,80,-411,,07:05,,,,,R
+2026-11-14,anchor,Cale Makar,8480069,COL,MTL,2,77,-330,,07:05,,,,,R
+2026-11-14,fun2,Ryan Leonard,8484186,WSH,NJD,2,85,-588,-210,07:05,Y,,,,H
+2026-11-14,fun2,Joel Eriksson Ek,8478493,MIN,BOS,2,84,-543,-360,07:05,Y,,,,R
+2026-11-14,fun2,Sam Reinhart,8477933,FLA,STL,2,84,-530,-340,07:05,Y,,,,R
+2026-11-14,fun2,Lucas Raymond,8482078,DET,TBL,2,82,-461,-210,07:05,Y,,,,R
+2026-11-14,fun2,Adam Fantilli,8484166,CBJ,PHI,2,78,-363,-360,07:05,,,,,H
+2026-11-14,fun2,Rasmus Dahlin,8480839,BUF,DAL,2,78,-353,-235,07:05,,,,,R
