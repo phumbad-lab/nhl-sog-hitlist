@@ -865,6 +865,23 @@ def format_list(day, res, followup=False):
     return title, "\n".join(out)
 
 
+def channel_list(day, res):
+    """Owner Nov 15: the friends' channel gets names only, no stats or prices:
+    '1. Jack Eichel (VGK) vs MIN'. Same anchors and fun bets, same order as his list."""
+    title = f"SOG +2 Hit List · {day.strftime('%a %b %-d')}"
+    targets, fun2 = res.get("targets") or [], res.get("anchors") or []
+    if not res.get("matchups") or not (targets or fun2):
+        return title, "No plays tonight."
+    out = []
+    if targets:
+        out.append("ANCHORS")
+        out += [f"{i}. {a['name']} ({a['team']}) vs {a['opp']}" for i, a in enumerate(targets, 1)]
+    if fun2:
+        out.append(("\n" if targets else "") + "FUN BETS")
+        out += [f"{a['name']} ({a['team']}) vs {a['opp']}" for a in fun2]
+    return title, "\n".join(out)
+
+
 def log_today(day, res):
     """Replace today's rows with the current list (a follow-up adds prices)."""
     rows = [r for r in load_log() if r["date"] != day.isoformat()]
@@ -1381,7 +1398,11 @@ def main():
         line = credits_line(state, now)
         send_push(title, body + (f"\n\n{line}" if line else ""))
         # Friends' channel: same list, no Credits line; once a day (a forced resend doesn't repost).
-        if state.get("channel_sent") != day.isoformat() and channel_post(title, body):
+        ch_title, ch_body = channel_list(day, res)
+        if results:
+            ch_body += "\n\n" + results
+        ch_body += "\n\n" + record_block(load_log())
+        if state.get("channel_sent") != day.isoformat() and channel_post(ch_title, ch_body):
             state["channel_sent"] = day.isoformat()
         if res["matchups"]:
             log_today(day, res)
