@@ -298,12 +298,12 @@ date,section,player,player_id,team,opponent,leg,hit_pct,fair_odds,dk_odds,dk_see
 2026-11-23,anchor,Joel Eriksson Ek,8478493,MIN,SJS,2,86,-597,,07:05,,4,W,,R
 2026-11-23,anchor,Alex Laferriere,8482155,LAK,MTL,2,81,-433,-425,07:05,,4,W,+0.24,R
 2026-11-24,fun2,Connor McDavid,8478402,EDM,VGK,2,85,-559,-380,07:05,,4,W,+0.26,H
-2026-11-25,anchor,Timo Meier,8478414,NJD,CBJ,2,87,-644,-500,04:39,,,,,R
-2026-11-25,anchor,Kirill Kaprizov,8478864,MIN,UTA,2,83,-476,-575,07:05,,,,,H
-2026-11-25,anchor,Rickard Rakell,8476483,PIT,CGY,2,80,-404,-475,04:39,,,,,H
-2026-11-25,fun2,Bo Horvat,8477500,NYI,STL,2,90,-857,-390,04:39,Y,,,,H
-2026-11-25,fun2,Ryan Leonard,8484186,WSH,PHI,2,88,-726,-260,04:39,Y,,,,H
-2026-11-25,fun2,Joel Eriksson Ek,8478493,MIN,UTA,2,84,-525,-370,07:05,Y,,,,H
-2026-11-25,fun2,Rasmus Dahlin,8480839,BUF,NYR,2,80,-412,-250,04:39,Y,,,,H
-2026-11-25,fun2,Dylan Larkin,8477946,MTL,COL,2,80,-388,-280,07:05,,,,,R
-2026-11-25,fun2,Roman Josi,8474600,NSH,DAL,2,78,-356,-225,07:05,,,,,R
+2026-11-25,anchor,Timo Meier,8478414,NJD,CBJ,2,87,-644,-500,04:39,,2,W,+0.20,R
+2026-11-25,anchor,Kirill Kaprizov,8478864,MIN,UTA,2,83,-476,-575,07:05,,3,W,+0.17,H
+2026-11-25,anchor,Rickard Rakell,8476483,PIT,CGY,2,80,-404,-475,04:39,,5,W,+0.21,H
+2026-11-25,fun2,Bo Horvat,8477500,NYI,STL,2,90,-857,-390,04:39,Y,2,W,+0.26,H
+2026-11-25,fun2,Ryan Leonard,8484186,WSH,PHI,2,88,-726,-260,04:39,Y,5,W,+0.38,H
+2026-11-25,fun2,Joel Eriksson Ek,8478493,MIN,UTA,2,84,-525,-370,07:05,Y,5,W,+0.27,H
+2026-11-25,fun2,Rasmus Dahlin,8480839,BUF,NYR,2,80,-412,-250,04:39,Y,2,W,+0.40,H
+2026-11-25,fun2,Dylan Larkin,8477946,MTL,COL,2,80,-388,-280,07:05,,4,W,+0.36,R
+2026-11-25,fun2,Roman Josi,8474600,NSH,DAL,2,78,-356,-225,07:05,,3,W,+0.44,R
