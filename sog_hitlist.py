@@ -733,7 +733,7 @@ def select(rs, day, now, state, spend=True):
 
     # Anchors: DK -400 or longer. Additional targets: -401 to -600, or no DK line yet.
     # Shorter than -600 isn't shown. Every qualifier's game is priced (1 credit a game).
-    final_anchors, targets = [], []
+    final_anchors, targets, locks = [], [], []
     for c in anchors:
         price, seen = price_for(c)
         g = (c["team"], c["opp"])
@@ -744,6 +744,8 @@ def select(rs, day, now, state, spend=True):
                 final_anchors.append(leg)
         elif price is None or price >= TARGET_MAX_JUICE:
             targets.append(leg)
+        else:
+            locks.append(leg)   # Nov 26: shorter than -600, shown to the owner only as "LOCKS"
     final_plus = []
     for c in plus_pool:
         if len(final_plus) == PLUS_LEGS:
@@ -774,7 +776,7 @@ def select(rs, day, now, state, spend=True):
     missing = [a["name"] for a in targets if a["price"] is None and a.get("game_posted")]
     return {"ranking": rs["ranking"], "matchups": matchups, "fun": fun, "missing": missing,
             "lined": sum(a["price"] is not None for a in final_anchors + targets),
-            "anchors": final_anchors, "targets": targets, "plus": final_plus, "unpriced": unpriced,
+            "anchors": final_anchors, "targets": targets, "locks": locks, "plus": final_plus, "unpriced": unpriced,
             "note": note, "ticket": build_ticket(final_anchors)}
 
 
@@ -838,6 +840,12 @@ def format_list(day, res, followup=False):
     if fun2:
         out.append(f"\nFUN BETS ({MAX_JUICE} or longer)")
         out.append(" · ".join(f"{a['name']} {fmt_price(a['price'])}" for a in fun2))
+    # Nov 26, owner only (not the channel): legs shorter than -600, names and prices. Graded quietly
+    # as "lock", not in Yesterday or the RECORD. They add little payout; the backtest shows no edge.
+    locks = res.get("locks") or []
+    if locks:
+        out.append(f"\nLOCKS ({TARGET_MAX_JUICE - 1} or shorter)")
+        out.append(" · ".join(f"{a['name']} {fmt_price(a['price'])}" for a in locks))
     has_any = fun2 or targets
     if res["plus"]:
         out.append(f"\n{PLUS_K}+ SHOOTERS ({fmt_price(PLUS_MIN_PRICE)} or better)")
@@ -890,6 +898,7 @@ def log_today(day, res):
     # Targets are logged (graded quietly, for later reviews) but not shown in results or the record.
     # Since Oct 24 the -401 to -600 legs are the anchors and the -400-or-longer legs are "fun2".
     for section, legs in (("anchor", res.get("targets") or []), ("fun2", res["anchors"]),
+                          ("lock", res.get("locks") or []),
                           ("plus", res["plus"]), ("fun", fun)):
         for a in legs:
             rows.append({"date": day.isoformat(), "section": section, "player": a["name"],
@@ -935,7 +944,7 @@ def grade(day):
         u = units(r)
         r["units"] = f"{u:+.2f}" if u is not None else ""
     save_log(rows)
-    graded = [r for r in pending if r.get("result") and r["section"] != "target"]
+    graded = [r for r in pending if r.get("result") and r["section"] not in ("target", "lock")]
     if not graded:
         return None
 
@@ -1058,7 +1067,7 @@ def checklist(c, role, pos, team, opp, rate, have, sa_rank, n_teams):
     elif price >= TARGET_MAX_JUICE:
         out.append(f"✅ DK 2+: {fmt_price(price)} · anchor range ({MAX_JUICE - 1} to {TARGET_MAX_JUICE})")
     else:
-        out.append(f"❌ DK 2+: {fmt_price(price)} · shorter than {TARGET_MAX_JUICE}, not listed")
+        out.append(f"🔒 DK 2+: {fmt_price(price)} · lock (shorter than {TARGET_MAX_JUICE}; your list only)")
     out.append(f"📊 Chance: 2+ {p2:.0%} (fair {to_american(p2)})" + (f" · 3+ {shown_chance(p3, 3):.0%}" if p3 is not None else ""))
     if FUN_BET and str(FUN_K) in c["detail"]:
         r3 = c["detail"][str(FUN_K)][0]
@@ -1078,6 +1087,8 @@ def check_players(names, day, now, state):
     listed = {}
     for i, t in enumerate(res.get("targets") or [], 1):
         listed[t["pid"]] = f"anchor #{i}: {t['k']}+ at {t['p']:.0%}" + (f", DK {fmt_price(t['price'])}" if t["price"] is not None else "")
+    for a in res.get("locks") or []:
+        listed.setdefault(a["pid"], f"lock: {a['k']}+ at {a['p']:.0%}, DK {fmt_price(a['price'])}")
     for a in res["anchors"]:
         listed.setdefault(a["pid"], f"fun bet: {a['k']}+ at {a['p']:.0%}"
                           + (f", DK {fmt_price(a['price'])}" if a["price"] is not None else ""))
@@ -1089,7 +1100,7 @@ def check_players(names, day, now, state):
     list_was_sent = state.get("last_sent") == day.isoformat() and bool(sent_rows)
     sent = {}
     for r in sent_rows:
-        label = {"anchor": "anchor", "target": "additional target", "fun2": "fun bet", "plus": f"{PLUS_K}+ shooters",
+        label = {"anchor": "anchor", "target": "additional target", "fun2": "fun bet", "lock": "lock", "plus": f"{PLUS_K}+ shooters",
                  "fun": f"{FUN_K}+ fun bet"}.get(r["section"], r["section"])
         price = f", DK {r['dk_odds']}" if r.get("dk_odds") else ""
         sent.setdefault(r["player_id"], []).append(f"{label}: {r['leg']}+{price}")
