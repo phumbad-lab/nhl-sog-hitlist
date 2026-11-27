@@ -839,13 +839,13 @@ def format_list(day, res, followup=False):
         out.append(f"ANCHORS: none tonight ({MAX_JUICE - 1} to {TARGET_MAX_JUICE})")
     if fun2:
         out.append(f"\nFUN BETS ({MAX_JUICE} or longer)")
-        out.append(" · ".join(f"{a['name']} {fmt_price(a['price'])}" for a in fun2))
+        out.append(" · ".join(f"{a['name']} ({a['team']}) {fmt_price(a['price'])}" for a in fun2))
     # Nov 26, owner only (not the channel): legs shorter than -600, names and prices. Graded quietly
     # as "lock", not in Yesterday or the RECORD. They add little payout; the backtest shows no edge.
     locks = res.get("locks") or []
     if locks:
         out.append(f"\nLOCKS ({TARGET_MAX_JUICE - 1} or shorter)")
-        out.append(" · ".join(f"{a['name']} {fmt_price(a['price'])}" for a in locks))
+        out.append(" · ".join(f"{a['name']} ({a['team']}) {fmt_price(a['price'])}" for a in locks))
     has_any = fun2 or targets
     if res["plus"]:
         out.append(f"\n{PLUS_K}+ SHOOTERS ({fmt_price(PLUS_MIN_PRICE)} or better)")
